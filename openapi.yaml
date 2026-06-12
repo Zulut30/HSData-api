@@ -110,6 +110,13 @@ paths:
           schema:
             type: integer
             enum: [0, 1]
+        - name: updated_since
+          in: query
+          description: Return cards with updated_at greater than or equal to this ISO 8601 timestamp.
+          schema:
+            type: string
+            format: date-time
+          example: "2026-06-12T00:00:00Z"
         - name: page
           in: query
           schema:
@@ -126,6 +133,19 @@ paths:
       responses:
         "200":
           description: Paginated cards.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: public, max-age=300, stale-while-revalidate=60
+            ETag:
+              schema:
+                type: string
+              example: "\"d58383073176b274cbc042447be79f20a62c574dd80d3ad1e0c0b41836331a97\""
+            Last-Modified:
+              schema:
+                type: string
+              example: Fri, 12 Jun 2026 20:17:09 GMT
           content:
             application/json:
               schema:
