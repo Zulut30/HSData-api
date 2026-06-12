@@ -1,0 +1,331 @@
+openapi: 3.1.0
+info:
+  title: HS Battlegrounds RU API
+  version: 1.0.0
+  description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
+servers:
+  - url: https://db.kolodahs.ru/api/v1
+paths:
+  /:
+    get:
+      summary: API information
+      responses:
+        "200":
+          description: API status and available endpoints.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  version:
+                    type: string
+                  status:
+                    type: string
+                  cards_total:
+                    type: integer
+                  endpoints:
+                    type: object
+                    additionalProperties:
+                      type: string
+  /meta:
+    get:
+      summary: API metadata
+      responses:
+        "200":
+          description: Creature types, tavern tiers, and aggregate counters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totals:
+                    $ref: "#/components/schemas/Totals"
+                  creature_types:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CreatureType"
+                  tavern_tiers:
+                    type: array
+                    items:
+                      type: integer
+                  counts_by_tier:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tavern_tier:
+                          type:
+                            - integer
+                            - "null"
+                        count:
+                          type: integer
+                  counts_by_creature_type:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        slug:
+                          type:
+                            - string
+                            - "null"
+                        name_ru:
+                          type:
+                            - string
+                            - "null"
+                        count:
+                          type: integer
+  /cards:
+    get:
+      summary: List cards
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search by Russian/English name, card_id, dbf, or Russian text.
+        - name: tier
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 7
+        - name: creature_type
+          in: query
+          schema:
+            $ref: "#/components/schemas/CreatureTypeSlug"
+        - name: dbf
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: in_pool
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+        - name: duos_only
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Paginated cards.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Card"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/Error"
+  /cards/{card_id}:
+    get:
+      summary: Get one card by card_id
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: BG34_231
+      responses:
+        "200":
+          description: Card.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Card"
+        "404":
+          $ref: "#/components/responses/Error"
+components:
+  schemas:
+    CreatureTypeSlug:
+      type: string
+      enum:
+        - all
+        - undead
+        - dragon
+        - mech
+        - murloc
+        - demon
+        - quilboar
+        - naga
+        - pirate
+        - beast
+        - elemental
+    CreatureType:
+      type: object
+      properties:
+        slug:
+          $ref: "#/components/schemas/CreatureTypeSlug"
+        name_ru:
+          type: string
+      required:
+        - slug
+        - name_ru
+    Card:
+      type: object
+      properties:
+        id:
+          type: integer
+        card_id:
+          type: string
+        dbf:
+          type:
+            - integer
+            - "null"
+        name:
+          type: object
+          properties:
+            ru:
+              type: string
+            en:
+              type:
+                - string
+                - "null"
+          required:
+            - ru
+            - en
+        tavern_tier:
+          type:
+            - integer
+            - "null"
+        creature_type:
+          oneOf:
+            - $ref: "#/components/schemas/CreatureType"
+            - type: "null"
+        attack:
+          type:
+            - integer
+            - "null"
+        health:
+          type:
+            - integer
+            - "null"
+        in_pool:
+          type: boolean
+        duos_only:
+          type: boolean
+        text_ru:
+          type:
+            - string
+            - "null"
+        images:
+          type: object
+          properties:
+            card:
+              type:
+                - string
+                - "null"
+              format: uri
+            golden:
+              type:
+                - string
+                - "null"
+              format: uri
+            art:
+              type:
+                - string
+                - "null"
+              format: uri
+            framed:
+              type:
+                - string
+                - "null"
+              format: uri
+        created_at:
+          type: string
+          example: "2026-06-09 14:29:32"
+        updated_at:
+          type: string
+          example: "2026-06-12 20:16:18"
+      required:
+        - id
+        - card_id
+        - dbf
+        - name
+        - tavern_tier
+        - creature_type
+        - attack
+        - health
+        - in_pool
+        - duos_only
+        - text_ru
+        - images
+        - created_at
+        - updated_at
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+      required:
+        - page
+        - per_page
+        - total
+        - total_pages
+        - has_next
+        - has_prev
+    Totals:
+      type: object
+      properties:
+        cards:
+          type: integer
+        in_pool:
+          type: integer
+        duos_only:
+          type: integer
+        with_framed_image:
+          type: integer
+  responses:
+    Error:
+      description: JSON error.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
