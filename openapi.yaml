@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.0.0
+  version: 1.1.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -12,10 +12,23 @@ paths:
       responses:
         "200":
           description: API status and available endpoints.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
           content:
             application/json:
               schema:
                 type: object
+                required:
+                  - name
+                  - version
+                  - status
+                  - cards_total
+                  - endpoints
                 properties:
                   name:
                     type: string
@@ -29,16 +42,43 @@ paths:
                     type: object
                     additionalProperties:
                       type: string
+              examples:
+                apiInfo:
+                  summary: API root response
+                  value:
+                    name: HS Battlegrounds RU API
+                    version: 1.1.0
+                    status: ok
+                    cards_total: 946
+                    endpoints:
+                      meta: /api/v1/meta
+                      cards: /api/v1/cards
+                      card_by_id: /api/v1/cards/{card_id}
+                      card_by_dbf: /api/v1/cards/by-dbf/{dbf}
   /meta:
     get:
       summary: API metadata
       responses:
         "200":
-          description: Creature types, tavern tiers, and aggregate counters.
+          description: Creature types, mechanics, tavern tiers, and aggregate counters.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
           content:
             application/json:
               schema:
                 type: object
+                required:
+                  - totals
+                  - creature_types
+                  - mechanics
+                  - tavern_tiers
+                  - counts_by_tier
+                  - counts_by_creature_type
                 properties:
                   totals:
                     $ref: "#/components/schemas/Totals"
@@ -46,6 +86,10 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/CreatureType"
+                  mechanics:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Mechanic"
                   tavern_tiers:
                     type: array
                     items:
@@ -53,29 +97,42 @@ paths:
                   counts_by_tier:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        tavern_tier:
-                          type:
-                            - integer
-                            - "null"
-                        count:
-                          type: integer
+                      $ref: "#/components/schemas/TierCount"
                   counts_by_creature_type:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        slug:
-                          type:
-                            - string
-                            - "null"
-                        name_ru:
-                          type:
-                            - string
-                            - "null"
-                        count:
-                          type: integer
+                      $ref: "#/components/schemas/CreatureTypeCount"
+              examples:
+                meta:
+                  summary: Metadata with mechanics
+                  value:
+                    totals:
+                      cards: 946
+                      in_pool: 277
+                      duos_only: 29
+                      with_framed_image: 946
+                    creature_types:
+                      - slug: all
+                        name_ru: Общие
+                      - slug: undead
+                        name_ru: Нежить
+                      - slug: mech
+                        name_ru: Механизм
+                    mechanics:
+                      - slug: BATTLECRY
+                        name_ru: Боевой клич
+                      - slug: START_OF_COMBAT
+                        name_ru: Начало боя
+                      - slug: DIVINE_SHIELD
+                        name_ru: Божественный щит
+                    tavern_tiers: [1, 2, 3, 4, 5, 6, 7]
+                    counts_by_tier:
+                      - tavern_tier: 1
+                        count: 74
+                    counts_by_creature_type:
+                      - slug: mech
+                        name_ru: Механизм
+                        count: 99
   /cards:
     get:
       summary: List cards
@@ -135,29 +192,94 @@ paths:
           description: Paginated cards.
           headers:
             Cache-Control:
-              schema:
-                type: string
-              example: public, max-age=300, stale-while-revalidate=60
+              $ref: "#/components/headers/CacheControl"
             ETag:
-              schema:
-                type: string
-              example: "\"d58383073176b274cbc042447be79f20a62c574dd80d3ad1e0c0b41836331a97\""
+              $ref: "#/components/headers/ETag"
             Last-Modified:
-              schema:
-                type: string
-              example: Fri, 12 Jun 2026 20:17:09 GMT
+              $ref: "#/components/headers/LastModified"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Card"
-                  pagination:
-                    $ref: "#/components/schemas/Pagination"
+                $ref: "#/components/schemas/CardListResponse"
+              examples:
+                firstInPoolCard:
+                  summary: One-card page from the current pool
+                  value:
+                    data:
+                      - id: 15
+                        card_id: BG26_146
+                        dbf: 98582
+                        name:
+                          ru: Баюбот
+                          en: Lullabot
+                        tavern_tier: 1
+                        creature_type:
+                          slug: mech
+                          name_ru: Механизм
+                        attack: 2
+                        health: 2
+                        in_pool: true
+                        duos_only: false
+                        mechanics:
+                          - slug: END_OF_TURN_TRIGGER
+                            name_ru: В конце хода
+                          - slug: MAGNETIC
+                            name_ru: Магнетизм
+                        text_ru: |-
+                          Магнетизм. В конце вашего хода получает +1 к здоровью.
+
+                          Типы: Механизм
+
+                          Механики: END_OF_TURN_TRIGGER, MAGNETIC
+
+                          Золотая версия dbf: 98585
+                        images:
+                          card: https://db.kolodahs.ru/uploads/cards/BG26_146.png
+                          golden: https://db.kolodahs.ru/uploads/golden/BG26_146.png
+                          art: https://db.kolodahs.ru/uploads/art/BG26_146.jpg
+                          framed: https://db.kolodahs.ru/uploads/framed/BG26_146.png
+                        created_at: "2026-06-12 12:56:19"
+                        updated_at: "2026-06-12 20:16:19"
+                    pagination:
+                      page: 1
+                      per_page: 1
+                      total: 277
+                      total_pages: 277
+                      has_next: true
+                      has_prev: false
         "400":
+          $ref: "#/components/responses/Error"
+  /cards/by-dbf/{dbf}:
+    get:
+      summary: Get one card by dbf
+      parameters:
+        - name: dbf
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          example: 95267
+      responses:
+        "200":
+          description: Card.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardResponse"
+              examples:
+                nerubianDeathswarmer:
+                  $ref: "#/components/examples/NerubianDeathswarmer"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
           $ref: "#/components/responses/Error"
   /cards/{card_id}:
     get:
@@ -168,20 +290,40 @@ paths:
           required: true
           schema:
             type: string
-          example: BG34_231
+          example: BG25_011
       responses:
         "200":
           description: Card.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    $ref: "#/components/schemas/Card"
+                $ref: "#/components/schemas/CardResponse"
+              examples:
+                nerubianDeathswarmer:
+                  $ref: "#/components/examples/NerubianDeathswarmer"
         "404":
           $ref: "#/components/responses/Error"
 components:
+  headers:
+    CacheControl:
+      schema:
+        type: string
+      example: public, max-age=300, stale-while-revalidate=60
+    ETag:
+      schema:
+        type: string
+      example: "\"d58383073176b274cbc042447be79f20a62c574dd80d3ad1e0c0b41836331a97\""
+    LastModified:
+      schema:
+        type: string
+      example: Fri, 12 Jun 2026 20:17:09 GMT
   schemas:
     CreatureTypeSlug:
       type: string
@@ -204,6 +346,40 @@ components:
           $ref: "#/components/schemas/CreatureTypeSlug"
         name_ru:
           type: string
+      required:
+        - slug
+        - name_ru
+    MechanicSlug:
+      type: string
+      enum:
+        - AURA
+        - AVENGE
+        - BACON_RALLY
+        - BACON_SPELLCRAFT_ID
+        - BATTLECRY
+        - CHOOSE_ONE
+        - DEATHRATTLE
+        - DISCOVER
+        - DIVINE_SHIELD
+        - END_OF_TURN_TRIGGER
+        - InvisibleDeathrattle
+        - MAGNETIC
+        - POISONOUS
+        - REBORN
+        - START_OF_COMBAT
+        - STEALTH
+        - TAUNT
+        - TRIGGER_VISUAL
+        - VENOMOUS
+        - WINDFURY
+    Mechanic:
+      type: object
+      properties:
+        slug:
+          $ref: "#/components/schemas/MechanicSlug"
+        name_ru:
+          type: string
+          example: Боевой клич
       required:
         - slug
         - name_ru
@@ -250,39 +426,23 @@ components:
           type: boolean
         duos_only:
           type: boolean
+        mechanics:
+          type: array
+          description: Mechanics parsed from the card source, such as battlecry, start of combat, divine shield, taunt, reborn, and other Hearthstone Battlegrounds mechanics.
+          items:
+            $ref: "#/components/schemas/Mechanic"
         text_ru:
           type:
             - string
             - "null"
         images:
-          type: object
-          properties:
-            card:
-              type:
-                - string
-                - "null"
-              format: uri
-            golden:
-              type:
-                - string
-                - "null"
-              format: uri
-            art:
-              type:
-                - string
-                - "null"
-              format: uri
-            framed:
-              type:
-                - string
-                - "null"
-              format: uri
+          $ref: "#/components/schemas/CardImages"
         created_at:
           type: string
-          example: "2026-06-09 14:29:32"
+          example: "2026-06-09 14:27:24"
         updated_at:
           type: string
-          example: "2026-06-12 20:16:18"
+          example: "2026-06-12 20:16:17"
       required:
         - id
         - card_id
@@ -294,10 +454,58 @@ components:
         - health
         - in_pool
         - duos_only
+        - mechanics
         - text_ru
         - images
         - created_at
         - updated_at
+    CardImages:
+      type: object
+      properties:
+        card:
+          type:
+            - string
+            - "null"
+          format: uri
+        golden:
+          type:
+            - string
+            - "null"
+          format: uri
+        art:
+          type:
+            - string
+            - "null"
+          format: uri
+        framed:
+          type:
+            - string
+            - "null"
+          format: uri
+      required:
+        - card
+        - golden
+        - art
+        - framed
+    CardResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Card"
+      required:
+        - data
+    CardListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - data
+        - pagination
     Pagination:
       type: object
       properties:
@@ -331,21 +539,109 @@ components:
           type: integer
         with_framed_image:
           type: integer
+      required:
+        - cards
+        - in_pool
+        - duos_only
+        - with_framed_image
+    TierCount:
+      type: object
+      properties:
+        tavern_tier:
+          type:
+            - integer
+            - "null"
+        count:
+          type: integer
+      required:
+        - tavern_tier
+        - count
+    CreatureTypeCount:
+      type: object
+      properties:
+        slug:
+          type:
+            - string
+            - "null"
+        name_ru:
+          type:
+            - string
+            - "null"
+        count:
+          type: integer
+      required:
+        - slug
+        - name_ru
+        - count
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+      required:
+        - error
+  examples:
+    NerubianDeathswarmer:
+      summary: One card with a battlecry mechanic
+      value:
+        data:
+          id: 9
+          card_id: BG25_011
+          dbf: 95267
+          name:
+            ru: Неруб-смертороевик
+            en: Nerubian Deathswarmer
+          tavern_tier: 2
+          creature_type:
+            slug: undead
+            name_ru: Нежить
+          attack: 1
+          health: 4
+          in_pool: true
+          duos_only: false
+          mechanics:
+            - slug: BATTLECRY
+              name_ru: Боевой клич
+          text_ru: |-
+            Боевой клич: ваша нежить получает +1 к атаке до конца матча (где бы она ни была).
+
+            Типы: Нежить
+
+            Механики: BATTLECRY
+
+            Золотая версия dbf: 95268
+          images:
+            card: https://db.kolodahs.ru/uploads/cards/BG25_011.png
+            golden: https://db.kolodahs.ru/uploads/golden/BG25_011.png
+            art: https://db.kolodahs.ru/uploads/art/BG25_011.jpg
+            framed: https://db.kolodahs.ru/uploads/framed/BG25_011.png
+          created_at: "2026-06-09 14:27:24"
+          updated_at: "2026-06-12 20:16:17"
   responses:
     Error:
       description: JSON error.
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: object
-                properties:
-                  code:
-                    type: string
-                  message:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            invalidParameter:
+              summary: Invalid dbf path parameter
+              value:
+                error:
+                  code: invalid_parameter
+                  message: dbf должен быть целым неотрицательным числом.
+            notFound:
+              summary: Card not found
+              value:
+                error:
+                  code: not_found
+                  message: Карта не найдена.
