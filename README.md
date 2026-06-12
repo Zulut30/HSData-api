@@ -42,8 +42,11 @@ curl 'https://db.kolodahs.ru/api/v1/cards?q=мурлок&tier=3&creature_type=mu
 | `dbf` | integer | Точный поиск по dbf |
 | `in_pool` | `0`/`1` | Только карты в текущем пуле или вне пула |
 | `duos_only` | `0`/`1` | Только дуо-карты или не только дуо |
+| `updated_since` | ISO 8601 datetime | Только карты, измененные начиная с указанного времени, например `2026-06-12T00:00:00Z` |
 | `page` | integer | Страница, по умолчанию `1` |
 | `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
+
+`updated_since` использует сравнение `updated_at >= updated_since`, чтобы синк по последней секунде не терял карты. На стороне клиента лучше дедуплицировать результат по `card_id`.
 
 ## Формат карты
 
@@ -105,6 +108,27 @@ curl 'https://db.kolodahs.ru/api/v1/cards?q=мурлок&tier=3&creature_type=mu
   }
 }
 ```
+
+## Кэширование
+
+Успешные JSON-ответы API отдают:
+
+| Заголовок | Значение |
+|---|---|
+| `Cache-Control` | `public, max-age=300, stale-while-revalidate=60` |
+| `ETag` | Хэш конкретного JSON-ответа |
+| `Last-Modified` | Максимальный `updated_at` среди карт в ответе/выборке |
+
+API поддерживает условные запросы:
+
+```bash
+curl -I 'https://db.kolodahs.ru/api/v1/cards?per_page=10'
+curl -H 'If-None-Match: "<etag>"' 'https://db.kolodahs.ru/api/v1/cards?per_page=10'
+```
+
+Если данные не менялись, сервер вернет `304 Not Modified`.
+
+Картинки в `/uploads/` публичные и отдаются с `ETag`, `Last-Modified` и недельным `Cache-Control`.
 
 ## Ошибки
 
