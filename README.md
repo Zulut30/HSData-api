@@ -5,7 +5,8 @@
 База: <https://db.kolodahs.ru>  
 API base URL: <https://db.kolodahs.ru/api/v1>  
 Авторизация: не нужна  
-CORS: `Access-Control-Allow-Origin: *`
+CORS: `Access-Control-Allow-Origin: *`  
+Текущая версия API: `1.1.0`
 
 ## Эндпоинты
 
@@ -15,6 +16,7 @@ CORS: `Access-Control-Allow-Origin: *`
 | `GET` | `/api/v1/meta` | Типы существ, уровни таверны и счетчики |
 | `GET` | `/api/v1/cards` | Список карт с фильтрами и пагинацией |
 | `GET` | `/api/v1/cards/{card_id}` | Одна карта по `card_id` |
+| `GET` | `/api/v1/cards/by-dbf/{dbf}` | Одна карта по `dbf` |
 
 ## Быстрые примеры
 
@@ -24,6 +26,10 @@ curl 'https://db.kolodahs.ru/api/v1/cards?per_page=10&in_pool=1'
 
 ```bash
 curl 'https://db.kolodahs.ru/api/v1/cards/BG34_231'
+```
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/cards/by-dbf/95267'
 ```
 
 ```bash
@@ -52,33 +58,56 @@ curl 'https://db.kolodahs.ru/api/v1/cards?q=мурлок&tier=3&creature_type=mu
 
 ```json
 {
-  "id": 10,
-  "card_id": "BG34_231",
-  "dbf": 126802,
+  "id": 9,
+  "card_id": "BG25_011",
+  "dbf": 95267,
   "name": {
-    "ru": "Старая душа",
-    "en": "Old Soul"
+    "ru": "Неруб-смертороевик",
+    "en": "Nerubian Deathswarmer"
   },
   "tavern_tier": 2,
   "creature_type": {
     "slug": "undead",
     "name_ru": "Нежить"
   },
-  "attack": 3,
+  "attack": 1,
   "health": 4,
   "in_pool": true,
   "duos_only": false,
-  "text_ru": "Пока находится в вашей руке: ...",
+  "mechanics": [
+    {
+      "slug": "BATTLECRY",
+      "name_ru": "Боевой клич"
+    }
+  ],
+  "text_ru": "Боевой клич: ваша нежить получает +1 к атаке до конца матча (где бы она ни была).\n\nТипы: Нежить\n\nМеханики: BATTLECRY\n\nЗолотая версия dbf: 95268",
   "images": {
-    "card": "https://db.kolodahs.ru/uploads/cards/BG34_231.png",
-    "golden": "https://db.kolodahs.ru/uploads/golden/BG34_231.png",
-    "art": "https://db.kolodahs.ru/uploads/art/BG34_231.jpg",
-    "framed": "https://db.kolodahs.ru/uploads/framed/BG34_231.png"
+    "card": "https://db.kolodahs.ru/uploads/cards/BG25_011.png",
+    "golden": "https://db.kolodahs.ru/uploads/golden/BG25_011.png",
+    "art": "https://db.kolodahs.ru/uploads/art/BG25_011.jpg",
+    "framed": "https://db.kolodahs.ru/uploads/framed/BG25_011.png"
   },
-  "created_at": "2026-06-09 14:29:32",
-  "updated_at": "2026-06-12 20:16:18"
+  "created_at": "2026-06-09 14:27:24",
+  "updated_at": "2026-06-12 20:16:17"
 }
 ```
+
+### Механики
+
+Поле `mechanics` есть у каждой карты. Если механик нет или они не указаны в источнике, приходит пустой массив.
+
+Примеры `slug`:
+
+| `slug` | `name_ru` |
+|---|---|
+| `BATTLECRY` | Боевой клич |
+| `DEATHRATTLE` | Предсмертный хрип |
+| `START_OF_COMBAT` | Начало боя |
+| `DIVINE_SHIELD` | Божественный щит |
+| `TAUNT` | Провокация |
+| `REBORN` | Перерождение |
+| `MAGNETIC` | Магнетизм |
+| `BACON_SPELLCRAFT_ID` | Чародейство |
 
 ### Картинки
 
@@ -155,3 +184,7 @@ curl -H 'If-None-Match: "<etag>"' 'https://db.kolodahs.ru/api/v1/cards?per_page=
 ## OpenAPI
 
 Полный контракт лежит в [`openapi.yaml`](openapi.yaml).
+
+## Changelog
+
+История изменений API лежит в [`CHANGELOG.md`](CHANGELOG.md).
