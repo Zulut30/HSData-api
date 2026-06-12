@@ -149,7 +149,7 @@ curl -H 'If-None-Match: "<etag>"' 'https://db.kolodahs.ru/api/v1/cards?per_page=
 |---:|---|---|
 | `400` | `invalid_parameter` | Неверный фильтр или значение параметра |
 | `404` | `not_found` | Нет такого эндпоинта или карты |
-| `405` | `method_not_allowed` | Метод не `GET`/`OPTIONS` |
+| `405` | `method_not_allowed` | Метод не `GET`/`HEAD`/`OPTIONS` |
 | `500` | `internal_error` | Внутренняя ошибка API |
 
 ## OpenAPI
