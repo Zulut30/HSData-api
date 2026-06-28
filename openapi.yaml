@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.4.0
+  version: 1.5.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -29,6 +29,7 @@ paths:
                   - status
                   - cards_total
                   - heroes_total
+                  - timewarped_total
                   - endpoints
                 properties:
                   name:
@@ -41,6 +42,8 @@ paths:
                     type: integer
                   heroes_total:
                     type: integer
+                  timewarped_total:
+                    type: integer
                   endpoints:
                     type: object
                     additionalProperties:
@@ -50,10 +53,11 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.4.0
+                    version: 1.5.0
                     status: ok
                     cards_total: 2352
-                    heroes_total: 13
+                    heroes_total: 119
+                    timewarped_total: 161
                     endpoints:
                       GET /api/v1: Описание API.
                       GET /api/v1/meta: Типы существ, уровни таверны и счетчики.
@@ -65,6 +69,9 @@ paths:
                       GET /api/v1/heroes: Список героев Полей сражений.
                       GET /api/v1/heroes/{card_id}: Один герой по card_id.
                       GET /api/v1/heroes/by-dbf/{dbf}: Один герой по dbf.
+                      GET /api/v1/timewarped-cards: Список хрономальных карт Timewarped Tavern.
+                      GET /api/v1/timewarped-cards/{card_id}: Одна хрономальная карта по card_id.
+                      GET /api/v1/timewarped-cards/by-dbf/{dbf}: Одна хрономальная карта по dbf.
   /meta:
     get:
       summary: API metadata
@@ -126,6 +133,7 @@ paths:
                       minions: 2245
                       spells: 107
                       heroes: 13
+                      timewarped: 161
                       in_pool: 350
                       duos_only: 78
                       with_framed_image: 2352
@@ -414,6 +422,120 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /timewarped-cards:
+    get:
+      summary: List Timewarped Tavern cards
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search by Russian/English name, card text, card_id, or dbf.
+        - name: tier
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 7
+        - name: card_type
+          in: query
+          schema:
+            type: string
+            enum: [minion, spell, hero_power]
+        - name: dbf
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: updated_since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Paginated Timewarped cards.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimewarpedCardListResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /timewarped-cards/{card_id}:
+    get:
+      summary: Get one Timewarped Tavern card by card_id
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: BG34_Giant_009
+      responses:
+        "200":
+          description: Timewarped card.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimewarpedCardResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /timewarped-cards/by-dbf/{dbf}:
+    get:
+      summary: Get one Timewarped Tavern card by dbf
+      parameters:
+        - name: dbf
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          example: 126343
+      responses:
+        "200":
+          description: Timewarped card.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimewarpedCardResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /heroes:
     get:
       summary: List Battlegrounds heroes
@@ -659,6 +781,11 @@ components:
             - "null"
         images:
           $ref: "#/components/schemas/CardImages"
+        wiki_page:
+          oneOf:
+            - $ref: "#/components/schemas/WikiPage"
+            - type: "null"
+          description: Hearthstone Wiki page link when wiki sync found a page. Full wiki metadata still requires `include=wiki`.
         created_at:
           type: string
           example: "2026-06-09 14:27:24"
@@ -685,8 +812,24 @@ components:
         - mechanics
         - text_ru
         - images
+        - wiki_page
         - created_at
         - updated_at
+    WikiPage:
+      type: object
+      properties:
+        title:
+          type:
+            - string
+            - "null"
+        url:
+          type:
+            - string
+            - "null"
+          format: uri
+      required:
+        - title
+        - url
     WikiTermLocalized:
       type: object
       properties:
@@ -896,6 +1039,162 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Card"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - data
+        - pagination
+    TimewarpedCard:
+      type: object
+      properties:
+        card_id:
+          type: string
+        dbf:
+          type:
+            - integer
+            - "null"
+        category:
+          type: object
+          properties:
+            slug:
+              type: string
+              enum: [timewarped]
+            name_ru:
+              type: string
+          required:
+            - slug
+            - name_ru
+        card_type:
+          type: object
+          properties:
+            slug:
+              type:
+                - string
+                - "null"
+              enum: [minion, spell, hero_power, null]
+            name_ru:
+              type: string
+          required:
+            - slug
+            - name_ru
+        name:
+          type: object
+          properties:
+            ru:
+              type:
+                - string
+                - "null"
+            en:
+              type: string
+          required:
+            - ru
+            - en
+        text:
+          type: object
+          properties:
+            ru:
+              type:
+                - string
+                - "null"
+            en:
+              type:
+                - string
+                - "null"
+          required:
+            - ru
+            - en
+        flavor:
+          type:
+            - string
+            - "null"
+        tavern_tier:
+          type:
+            - integer
+            - "null"
+        cost:
+          type:
+            - integer
+            - "null"
+        attack:
+          type:
+            - integer
+            - "null"
+        health:
+          type:
+            - integer
+            - "null"
+        minion_type:
+          type:
+            - string
+            - "null"
+        race:
+          type:
+            - string
+            - "null"
+        artist:
+          type:
+            - string
+            - "null"
+        images:
+          type: object
+          properties:
+            card:
+              type:
+                - string
+                - "null"
+              format: uri
+            golden:
+              type:
+                - string
+                - "null"
+              format: uri
+            art:
+              type:
+                - string
+                - "null"
+              format: uri
+          required:
+            - card
+            - golden
+            - art
+        golden:
+          type: object
+          additionalProperties: true
+        wiki:
+          allOf:
+            - $ref: "#/components/schemas/WikiMeta"
+          description: Full wiki payload for Timewarped cards, including availability, related cards, sounds, gallery, card changes, external links, full_tags, fetched_at, and changed_at.
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - card_id
+        - dbf
+        - category
+        - card_type
+        - name
+        - text
+        - flavor
+        - images
+        - golden
+        - wiki
+        - created_at
+        - updated_at
+    TimewarpedCardResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/TimewarpedCard"
+      required:
+        - data
+    TimewarpedCardListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimewarpedCard"
         pagination:
           $ref: "#/components/schemas/Pagination"
       required:
@@ -1206,6 +1505,8 @@ components:
           type: integer
         heroes:
           type: integer
+        timewarped:
+          type: integer
         in_pool:
           type: integer
         duos_only:
@@ -1217,6 +1518,7 @@ components:
         - minions
         - spells
         - heroes
+        - timewarped
         - in_pool
         - duos_only
         - with_framed_image

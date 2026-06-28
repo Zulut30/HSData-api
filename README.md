@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.4.0`
+- Текущая версия API: `1.5.0`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -30,8 +30,10 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - сила героя на русском языке с картинками;
 - компаньон/buddy на русском языке с картинками;
 - hero skins, gallery, full art, availability и card changes из wiki.
+- отдельная категория хрономальных карт Timewarped Tavern;
+- для Timewarped-карт: русская основная карта, золотая версия, `Flavor`, `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes` и `External links`.
 
-На версии `1.4.0` публичный API отдает карты, tavern spells и героев. Wiki-данные для карт включают `Availability`, `Wiki mechanics`, `Wiki tags`, `Related with`, `Card changes` и `External links`, когда эти блоки есть на wiki.
+На версии `1.5.0` публичный API отдает карты, tavern spells, героев и отдельную категорию Timewarped Tavern. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок для обычных карт по-прежнему подключается через `include=wiki`.
 
 ## Быстрый старт
 
@@ -83,6 +85,14 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/TB_BaconShop_HERO_16'
 curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
 ```
 
+Получить хрономальные карты Timewarped Tavern:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/timewarped-cards?per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/BG34_Giant_009'
+curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/by-dbf/126343'
+```
+
 Поиск по русскому тексту, названию, `card_id`, `dbf` и заметкам:
 
 ```bash
@@ -112,6 +122,9 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `GET` | `/api/v1/heroes` | Список героев с пагинацией |
 | `GET` | `/api/v1/heroes/{card_id}` | Один герой по `card_id` |
 | `GET` | `/api/v1/heroes/by-dbf/{dbf}` | Один герой по `dbf` |
+| `GET` | `/api/v1/timewarped-cards` | Список хрономальных карт Timewarped Tavern |
+| `GET` | `/api/v1/timewarped-cards/{card_id}` | Одна хрономальная карта по `card_id` |
+| `GET` | `/api/v1/timewarped-cards/by-dbf/{dbf}` | Одна хрономальная карта по `dbf` |
 
 Поддерживаемые HTTP-методы: `GET`, `HEAD`, `OPTIONS`.
 
@@ -193,6 +206,10 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
     "art": "https://db.kolodahs.ru/uploads/art/BG_AT_069.jpg",
     "framed": "https://db.kolodahs.ru/uploads/framed/BG_AT_069.png"
   },
+  "wiki_page": {
+    "title": "Battlegrounds/Sparring Partner",
+    "url": "https://hearthstone.wiki.gg/wiki/Battlegrounds/Sparring_Partner"
+  },
   "created_at": "2026-06-12 13:32:50",
   "updated_at": "2026-06-28 00:17:05"
 }
@@ -218,6 +235,7 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `mechanics` | array | Локальные механики с русскими названиями |
 | `text_ru` | string/null | Текст и служебные заметки на русском |
 | `images` | object | Публичные URL изображений |
+| `wiki_page` | object/null | Ссылка на страницу карты на hearthstone.wiki.gg, если wiki-синхронизация нашла страницу |
 | `created_at` | string | Дата создания записи в формате MySQL UTC |
 | `updated_at` | string | Дата последнего изменения записи в формате MySQL UTC |
 
@@ -391,6 +409,88 @@ curl 'https://db.kolodahs.ru/api/v1/cards/BG28_168/wiki'
 - `related_card_ids`;
 - `card_changes`;
 - `external_links`.
+
+## Хрономальные карты Timewarped Tavern
+
+Timewarped-карты лежат в отдельной категории, чтобы не смешивать их с обычным пулом `/cards`.
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/timewarped-cards?per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/timewarped-cards?card_type=minion&tier=3'
+curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/BG34_Giant_009'
+curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/by-dbf/126343'
+```
+
+Параметры списка:
+
+| Параметр | Тип | Описание |
+|---|---:|---|
+| `q` | string | Поиск по RU/EN названию, тексту, `card_id`, `dbf` |
+| `tier` | integer | Уровень таверны `1..7` |
+| `card_type` | string | `minion`, `spell` или `hero_power` |
+| `dbf` | integer | Точный поиск по DBF |
+| `updated_since` | ISO 8601 datetime | Только записи, измененные начиная с указанного времени |
+| `page` | integer | Страница, по умолчанию `1` |
+| `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
+
+Пример одной Timewarped-карты:
+
+```json
+{
+  "card_id": "BG34_Giant_009",
+  "dbf": 126343,
+  "category": {
+    "slug": "timewarped",
+    "name_ru": "Хрономальные карты"
+  },
+  "card_type": {
+    "slug": "minion",
+    "name_ru": "Существо"
+  },
+  "name": {
+    "ru": "Хрономальный бродячий кот",
+    "en": "Timewarped Alleycat"
+  },
+  "text": {
+    "ru": "В конце вашего хода призывает домашнюю кошку с характеристиками этого существа.",
+    "en": "At the end of your turn, summon a Tabbycat with this minion's stats."
+  },
+  "flavor": "To be a cool cat in Gadgetzan, you gotta have bling.",
+  "tavern_tier": 3,
+  "attack": 7,
+  "health": 7,
+  "minion_type": "Beast",
+  "artist": "Anton Zemskov",
+  "images": {
+    "card": "https://art.hearthstonejson.com/v1/bgs/latest/ruRU/512x/BG34_Giant_009.png",
+    "golden": "https://hearthstone.wiki.gg/images/BG34_Giant_009_G_Battlegrounds.png?..."
+  },
+  "golden": {
+    "card_id": "BG34_Giant_009_G",
+    "dbf": 127360,
+    "name": {
+      "ru": null,
+      "en": "Timewarped Alleycat"
+    },
+    "image": "https://hearthstone.wiki.gg/images/BG34_Giant_009_G_Battlegrounds.png?..."
+  },
+  "wiki": {
+    "page": {
+      "title": "Battlegrounds/Timewarped Alleycat",
+      "url": "https://hearthstone.wiki.gg/wiki/Battlegrounds/Timewarped_Alleycat"
+    },
+    "availability": {},
+    "related_cards": [],
+    "related_card_ids": [],
+    "sounds": [],
+    "gallery": [],
+    "card_changes": [],
+    "external_links": []
+  }
+}
+```
+
+В `wiki` для Timewarped-карт сразу возвращаются `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes`, `External links`, `Wiki mechanics`, `Wiki tags`, `full_tags`, `fetched_at` и `changed_at`. Основная картинка строится как русский Battlegrounds-рендер, золотая версия берется с wiki, когда отдельная golden-страница есть.
 
 ## Герои
 
@@ -568,6 +668,7 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
 2. Идите по `/api/v1/cards?per_page=200&page=1`, затем `page=2` и дальше до `has_next=false`.
 3. Сохраняйте карты по ключу `card_id`; `dbf` удобен для поиска, но `card_id` лучше как стабильный primary key.
 4. Если нужны звуки, artist, external links и related cards, используйте `include=wiki`.
+5. Для Timewarped Tavern синхронизируйте отдельный ресурс `/api/v1/timewarped-cards`.
 
 Для последующих обновлений:
 

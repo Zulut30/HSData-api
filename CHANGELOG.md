@@ -2,6 +2,14 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.5.0 - 2026-06-28
+
+- Добавлена отдельная категория Timewarped Tavern: `GET /api/v1/timewarped-cards`, `GET /api/v1/timewarped-cards/{card_id}`, `GET /api/v1/timewarped-cards/by-dbf/{dbf}`.
+- Timewarped-карты отдают русскую основную карту, golden-версию, `Flavor`, `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes`, `External links`, `Wiki mechanics`, `Wiki tags` и `full_tags`.
+- В обычный объект карты добавлено поле `wiki_page` со ссылкой на hearthstone.wiki.gg без необходимости `include=wiki`.
+- В `GET /api/v1` и `GET /api/v1/meta` добавлен счетчик `timewarped_total` / `totals.timewarped`.
+- README и OpenAPI обновлены под Timewarped-категорию.
+
 ## 1.4.0 - 2026-06-28
 
 - В wiki-блок карт добавлены `related_card_ids` и `card_changes`.
