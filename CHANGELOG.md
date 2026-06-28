@@ -2,6 +2,14 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.6.0 - 2026-06-28
+
+- Добавлены отдельные библиотеки: `anomalies`, `quests`, `darkmoon-prizes`, `rewards`.
+- Добавлены endpoints `GET /api/v1/anomalies`, `/quests`, `/darkmoon-prizes`, `/rewards`, а также универсальный `/api/v1/libraries/{library}`.
+- В библиотечных ответах есть русские названия, русский текст, картинки, `card_id`, `dbf`, `in_pool`, `pool_status`, `wiki_page`, `source`, `fetched_at`, `changed_at`.
+- Аномалии, квесты и призы разделяются на доступные и удаленные по wiki.gg; награды берутся из официального Blizzard списка `bgCardType=reward`.
+- В `GET /api/v1` и `GET /api/v1/meta` добавлен счетчик библиотек.
+
 ## 1.5.0 - 2026-06-28
 
 - Добавлена отдельная категория Timewarped Tavern: `GET /api/v1/timewarped-cards`, `GET /api/v1/timewarped-cards/{card_id}`, `GET /api/v1/timewarped-cards/by-dbf/{dbf}`.

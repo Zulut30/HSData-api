@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.5.0
+  version: 1.6.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -30,6 +30,7 @@ paths:
                   - cards_total
                   - heroes_total
                   - timewarped_total
+                  - library_total
                   - endpoints
                 properties:
                   name:
@@ -44,6 +45,8 @@ paths:
                     type: integer
                   timewarped_total:
                     type: integer
+                  library_total:
+                    type: integer
                   endpoints:
                     type: object
                     additionalProperties:
@@ -53,11 +56,12 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.5.0
+                    version: 1.6.0
                     status: ok
                     cards_total: 2352
                     heroes_total: 119
                     timewarped_total: 161
+                    library_total: 204
                     endpoints:
                       GET /api/v1: Описание API.
                       GET /api/v1/meta: Типы существ, уровни таверны и счетчики.
@@ -72,6 +76,11 @@ paths:
                       GET /api/v1/timewarped-cards: Список хрономальных карт Timewarped Tavern.
                       GET /api/v1/timewarped-cards/{card_id}: Одна хрономальная карта по card_id.
                       GET /api/v1/timewarped-cards/by-dbf/{dbf}: Одна хрономальная карта по dbf.
+                      GET /api/v1/anomalies: Библиотека аномалий.
+                      GET /api/v1/quests: Библиотека квестов.
+                      GET /api/v1/darkmoon-prizes: Библиотека призов Ярмарки Новолуния.
+                      GET /api/v1/rewards: Библиотека наград.
+                      GET /api/v1/libraries/{library}: Универсальный доступ к библиотекам.
   /meta:
     get:
       summary: API metadata
@@ -134,6 +143,7 @@ paths:
                       spells: 107
                       heroes: 13
                       timewarped: 161
+                      libraries: 204
                       in_pool: 350
                       duos_only: 78
                       with_framed_image: 2352
@@ -536,6 +546,140 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /anomalies:
+    get:
+      summary: List Battlegrounds anomalies
+      parameters:
+        - $ref: "#/components/parameters/LibraryQuery"
+        - $ref: "#/components/parameters/LibraryDbfQuery"
+        - $ref: "#/components/parameters/LibraryInPoolQuery"
+        - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/UpdatedSinceQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/PerPageQuery"
+      responses:
+        "200":
+          description: Paginated library cards.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardListResponse"
+  /quests:
+    get:
+      summary: List Battlegrounds quests
+      parameters:
+        - $ref: "#/components/parameters/LibraryQuery"
+        - $ref: "#/components/parameters/LibraryDbfQuery"
+        - $ref: "#/components/parameters/LibraryInPoolQuery"
+        - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/UpdatedSinceQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/PerPageQuery"
+      responses:
+        "200":
+          description: Paginated library cards.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardListResponse"
+  /darkmoon-prizes:
+    get:
+      summary: List Battlegrounds Darkmoon Prizes
+      parameters:
+        - $ref: "#/components/parameters/LibraryQuery"
+        - $ref: "#/components/parameters/LibraryDbfQuery"
+        - $ref: "#/components/parameters/LibraryInPoolQuery"
+        - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/UpdatedSinceQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/PerPageQuery"
+      responses:
+        "200":
+          description: Paginated library cards.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardListResponse"
+  /rewards:
+    get:
+      summary: List Battlegrounds rewards
+      parameters:
+        - $ref: "#/components/parameters/LibraryQuery"
+        - $ref: "#/components/parameters/LibraryDbfQuery"
+        - $ref: "#/components/parameters/LibraryInPoolQuery"
+        - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/UpdatedSinceQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/PerPageQuery"
+      responses:
+        "200":
+          description: Paginated library cards.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardListResponse"
+  /libraries/{library}:
+    get:
+      summary: List one auxiliary Battlegrounds library
+      parameters:
+        - $ref: "#/components/parameters/LibraryPath"
+        - $ref: "#/components/parameters/LibraryQuery"
+        - $ref: "#/components/parameters/LibraryDbfQuery"
+        - $ref: "#/components/parameters/LibraryInPoolQuery"
+        - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/UpdatedSinceQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/PerPageQuery"
+      responses:
+        "200":
+          description: Paginated library cards.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardListResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /libraries/{library}/{card_id}:
+    get:
+      summary: Get one auxiliary library card by card_id
+      parameters:
+        - $ref: "#/components/parameters/LibraryPath"
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Library card.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /libraries/{library}/by-dbf/{dbf}:
+    get:
+      summary: Get one auxiliary library card by dbf
+      parameters:
+        - $ref: "#/components/parameters/LibraryPath"
+        - name: dbf
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Library card.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /heroes:
     get:
       summary: List Battlegrounds heroes
@@ -654,6 +798,60 @@ components:
       schema:
         type: string
       example: Fri, 12 Jun 2026 20:17:09 GMT
+  parameters:
+    LibraryPath:
+      name: library
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [anomaly, quest, darkmoon_prize, reward]
+    LibraryQuery:
+      name: q
+      in: query
+      schema:
+        type: string
+      description: Search by Russian/English name, text, card_id, or dbf.
+    LibraryDbfQuery:
+      name: dbf
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+    LibraryInPoolQuery:
+      name: in_pool
+      in: query
+      schema:
+        type: integer
+        enum: [0, 1]
+      description: 1 for available/current pool entries, 0 for removed entries.
+    LibraryStatusQuery:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [available, removed]
+    UpdatedSinceQuery:
+      name: updated_since
+      in: query
+      schema:
+        type: string
+        format: date-time
+    PageQuery:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPageQuery:
+      name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
   schemas:
     CreatureTypeSlug:
       type: string
@@ -1195,6 +1393,140 @@ components:
       required:
         - data
         - pagination
+    LibraryCard:
+      type: object
+      properties:
+        library:
+          type: object
+          properties:
+            slug:
+              type: string
+              enum: [anomaly, quest, darkmoon_prize, reward]
+            name_ru:
+              type: string
+          required:
+            - slug
+            - name_ru
+        card_id:
+          type: string
+        dbf:
+          type:
+            - integer
+            - "null"
+        name:
+          type: object
+          properties:
+            ru:
+              type: string
+            en:
+              type:
+                - string
+                - "null"
+          required:
+            - ru
+            - en
+        text:
+          type: object
+          properties:
+            ru:
+              type:
+                - string
+                - "null"
+            en:
+              type:
+                - string
+                - "null"
+          required:
+            - ru
+            - en
+        images:
+          type: object
+          properties:
+            card:
+              type:
+                - string
+                - "null"
+              format: uri
+            golden:
+              type:
+                - string
+                - "null"
+              format: uri
+            crop:
+              type:
+                - string
+                - "null"
+              format: uri
+          required:
+            - card
+            - golden
+            - crop
+        artist:
+          type:
+            - string
+            - "null"
+        card_type:
+          type: object
+          additionalProperties: true
+        mana_cost:
+          type:
+            - integer
+            - "null"
+        in_pool:
+          type: boolean
+        pool_status:
+          type: string
+          enum: [available, removed]
+        wiki_page:
+          oneOf:
+            - $ref: "#/components/schemas/WikiPage"
+            - type: "null"
+        source:
+          type: string
+        fetched_at:
+          type:
+            - string
+            - "null"
+        changed_at:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - library
+        - card_id
+        - dbf
+        - name
+        - text
+        - images
+        - in_pool
+        - pool_status
+        - wiki_page
+        - source
+        - created_at
+        - updated_at
+    LibraryCardResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/LibraryCard"
+      required:
+        - data
+    LibraryCardListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LibraryCard"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - data
+        - pagination
     HeroCard:
       type: object
       description: Russian card payload for hero power or buddy from Blizzard API.
@@ -1502,6 +1834,8 @@ components:
           type: integer
         timewarped:
           type: integer
+        libraries:
+          type: integer
         in_pool:
           type: integer
         duos_only:
@@ -1514,6 +1848,7 @@ components:
         - spells
         - heroes
         - timewarped
+        - libraries
         - in_pool
         - duos_only
         - with_framed_image
