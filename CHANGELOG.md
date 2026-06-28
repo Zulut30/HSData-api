@@ -2,6 +2,17 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.3.0 - 2026-06-28
+
+- Добавлены hero endpoints: `GET /api/v1/heroes`, `GET /api/v1/heroes/{card_id}`, `GET /api/v1/heroes/by-dbf/{dbf}`.
+- В ответ героя добавлены броня, броня в дуо, здоровье, artist, race, character, As a hero и описание.
+- Добавлены русские данные силы героя и buddy из Blizzard API: `dbf`, название, текст, обычная/золотая картинка и crop image.
+- Добавлены hero images: картинка героя и full art.
+- Добавлены wiki-данные героя: `availability`, `hero_skins`, `gallery`, `card_changes`, `external_links`, `fetched_at`, `changed_at`.
+- В `GET /api/v1` добавлены `heroes_total` и hero endpoints.
+- В `GET /api/v1/meta` добавлен счетчик `totals.heroes`.
+- README и OpenAPI расширены примерами получения героев, buddy, hero power, art, skins и gallery.
+
 ## 1.2.0 - 2026-06-28
 
 - Добавлен параметр `include=wiki` для списка карт, карты по `card_id` и карты по `dbf`.

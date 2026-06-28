@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.2.0`
+- Текущая версия API: `1.3.0`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -23,8 +23,13 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - опциональные wiki-метаданные из `hearthstone.wiki.gg`;
 - звуки карты, artist, race, availability, external links и related cards из wiki;
 - локализованные `Wiki mechanics` и `Wiki tags`, если для них уже заполнен русский перевод.
+- герои Полей сражений;
+- броня героя, броня в дуо и здоровье;
+- сила героя на русском языке с картинками;
+- компаньон/buddy на русском языке с картинками;
+- hero skins, gallery, full art, availability и card changes из wiki.
 
-На версии `1.2.0` публичный API отдает карты. Герои Полей сражений синхронизируются в базе сайта отдельно и будут документироваться в API после публикации hero endpoints.
+На версии `1.3.0` публичный API отдает и карты, и героев. Синхронизация героев идет постепенно; список `/heroes` показывает только уже готовые записи со статусом `ok`.
 
 ## Быстрый старт
 
@@ -58,6 +63,24 @@ curl 'https://db.kolodahs.ru/api/v1/cards/BG_AT_069?include=wiki'
 curl 'https://db.kolodahs.ru/api/v1/cards/BG_AT_069/wiki'
 ```
 
+Получить список героев:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/heroes?per_page=20'
+```
+
+Получить одного героя вместе с силой героя, buddy, skins, gallery и art:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/heroes/TB_BaconShop_HERO_16'
+```
+
+Получить героя по `dbf`:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
+```
+
 Поиск по русскому тексту, названию, `card_id`, `dbf` и заметкам:
 
 ```bash
@@ -84,6 +107,9 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `GET` | `/api/v1/cards/by-dbf/{dbf}` | Одна карта по `dbf` |
 | `GET` | `/api/v1/cards/by-dbf/{dbf}?include=wiki` | Одна карта по `dbf` с wiki-метаданными |
 | `GET` | `/api/v1/cards/by-dbf/{dbf}/wiki` | Только wiki-метаданные карты по `dbf` |
+| `GET` | `/api/v1/heroes` | Список героев с пагинацией |
+| `GET` | `/api/v1/heroes/{card_id}` | Один герой по `card_id` |
+| `GET` | `/api/v1/heroes/by-dbf/{dbf}` | Один герой по `dbf` |
 
 Поддерживаемые HTTP-методы: `GET`, `HEAD`, `OPTIONS`.
 
@@ -327,6 +353,154 @@ curl 'https://db.kolodahs.ru/api/v1/cards/BG_AT_069/wiki'
 
 Если wiki-данные для карты еще не синхронизированы, поле `wiki` в ответе с `include=wiki` будет `null`. Endpoint `/wiki` для такой карты вернет `404`.
 
+## Герои
+
+Герои доступны отдельно от карт:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/heroes?per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/heroes/TB_BaconShop_HERO_16'
+curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
+```
+
+### Фильтры списка героев
+
+`GET /api/v1/heroes`
+
+| Параметр | Тип | Описание |
+|---|---:|---|
+| `q` | string | Поиск по RU/EN имени героя, `card_id`, `dbf`, силе героя и buddy |
+| `dbf` | integer | Точный поиск по `dbf` героя |
+| `updated_since` | ISO 8601 datetime | Только герои, измененные начиная с указанного времени |
+| `page` | integer | Страница, по умолчанию `1` |
+| `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
+
+Список возвращает только полностью синхронизированных героев со статусом `ok`. Если фоновая синхронизация еще идет, `pagination.total` будет расти.
+
+### Формат героя
+
+Пример сокращен, но показывает основные поля: броню, силу героя, buddy, картинки, skins, gallery и card changes.
+
+```json
+{
+  "card_id": "TB_BaconShop_HERO_16",
+  "dbf": 57944,
+  "hero_id": 57944,
+  "name": {
+    "ru": "А.Ф.Ка",
+    "en": "A. F. Kay"
+  },
+  "health": 30,
+  "armor": {
+    "normal": 15,
+    "duos": 13,
+    "text": "15"
+  },
+  "artist": "Adam Byrne",
+  "race": "Human",
+  "character": {
+    "name": "A. F. Kay",
+    "as_hero": "A. F. Kay is a hero that the player can pick in Battlegrounds.",
+    "description": null
+  },
+  "images": {
+    "hero": "https://hearthstone.wiki.gg/images/TB_BaconShop_HERO_16.png?40be52",
+    "full_art": "https://hearthstone.wiki.gg/images/A._F._Kay_%28boss%29_full.jpg?460e37"
+  },
+  "hero_power": {
+    "dbf": 59891,
+    "card": {
+      "dbf": 59891,
+      "name": "Прокрастинация",
+      "text": "Вы пропускаете первые два хода и <b>раскапываете</b> существ из таверны 3-го и 4-го уровня.",
+      "image": "https://d15f34w2p8l1cc.cloudfront.net/hearthstone/16033108ddf25769296cd3975e458cea3e0a3ceff7e260168eefb78ac8cd472b.png",
+      "image_gold": "https://d15f34w2p8l1cc.cloudfront.net/hearthstone/bf7274a72f605d9166d76e07d38aa632ede90e6b27b833c477a19a7b9572ee4a.png",
+      "crop_image": "https://d15f34w2p8l1cc.cloudfront.net/hearthstone/fb260fc1e38428e372e1b7d8d29fb6f68ed0cb04e571e90662c20460bf73730d.png",
+      "card_type_id": 10
+    }
+  },
+  "buddy": {
+    "dbf": 77774,
+    "card": {
+      "dbf": 77774,
+      "name": "Торговец закусками",
+      "text": "В конце вашего хода существо 3-го уровня получает характеристики этого существа.",
+      "image": "https://d15f34w2p8l1cc.cloudfront.net/hearthstone/adae7ac0b3d21dc2aa40eb5a8d2c4f72f708d2e44de4d9d25feba637d0a74734.png",
+      "crop_image": "https://d15f34w2p8l1cc.cloudfront.net/hearthstone/bbb69a6184a24f3e7166fad467f0e716e1fbe06d2329d3e25bb76160dda85fea.png",
+      "parent_id": 57944,
+      "card_type_id": 4
+    }
+  },
+  "wiki": {
+    "status": "ok",
+    "page": {
+      "title": "Battlegrounds/A. F. Kay",
+      "url": "https://hearthstone.wiki.gg/wiki/Battlegrounds/A._F._Kay"
+    },
+    "availability": {
+      "formats": [],
+      "exclusions": [],
+      "notes": [],
+      "page_entries": []
+    },
+    "hero_skins": [
+      {
+        "heading": "Hero skins",
+        "cards": [
+          {
+            "card_id": "TB_BaconShop_HERO_16_SKIN_A",
+            "title": "Battlegrounds/Sunlounger A. F. Kay",
+            "url": "https://hearthstone.wiki.gg/wiki/Battlegrounds/Sunlounger_A._F._Kay",
+            "image_url": "https://hearthstone.wiki.gg/images/thumb/TB_BaconShop_HERO_16_SKIN_A.png/235px-TB_BaconShop_HERO_16_SKIN_A.png?1e36b8"
+          }
+        ]
+      }
+    ],
+    "gallery": [
+      {
+        "caption": "A. F. Kay, full art",
+        "file_url": "https://hearthstone.wiki.gg/images/A._F._Kay_%28boss%29_full.jpg?460e37",
+        "thumb_url": "https://hearthstone.wiki.gg/images/thumb/A._F._Kay_%28boss%29_full.jpg/281px-A._F._Kay_%28boss%29_full.jpg?460e37"
+      }
+    ],
+    "card_changes": [],
+    "external_links": [],
+    "fetched_at": "2026-06-28 00:26:30",
+    "changed_at": "2026-06-28 00:26:30",
+    "error": null
+  },
+  "created_at": "2026-06-28 00:26:30",
+  "updated_at": "2026-06-28 00:26:30"
+}
+```
+
+### Поля героя
+
+| Поле | Описание |
+|---|---|
+| `card_id` | Hearthstone card ID героя |
+| `dbf` | DBF героя |
+| `hero_id` | Hero ID из источника, если найден |
+| `name.ru` / `name.en` | Русское и английское имя героя |
+| `health` | Здоровье героя |
+| `armor.normal` | Обычная броня |
+| `armor.duos` | Броня в дуо |
+| `artist` | Художник героя |
+| `race` | Race/character race из wiki |
+| `character` | Character, As a hero и описание |
+| `images.hero` | Картинка героя |
+| `images.full_art` | Полный арт героя |
+| `hero_power.dbf` | DBF силы героя |
+| `hero_power.card` | Русская карта силы героя из Blizzard API |
+| `buddy.dbf` | DBF компаньона |
+| `buddy.card` | Русская карта buddy из Blizzard API |
+| `wiki.availability` | Availability из wiki |
+| `wiki.hero_skins` | Скины героя, включая `card_id`, `url`, `image_url` |
+| `wiki.gallery` | Gallery/full art из wiki |
+| `wiki.card_changes` | История изменений карты/героя |
+| `wiki.external_links` | Внешние ссылки |
+| `fetched_at`, `changed_at`, `updated_at` | Времена синхронизации и обновления |
+
 ## Справочники и счетчики
 
 `GET /api/v1/meta` возвращает:
@@ -336,6 +510,7 @@ curl 'https://db.kolodahs.ru/api/v1/cards/BG_AT_069/wiki'
 | `totals.cards` | Общее число карт |
 | `totals.minions` | Число существ |
 | `totals.spells` | Число заклинаний |
+| `totals.heroes` | Число синхронизированных героев |
 | `totals.in_pool` | Карт в текущем пуле |
 | `totals.duos_only` | Карт только для дуо |
 | `totals.with_framed_image` | Карт с framed image |
