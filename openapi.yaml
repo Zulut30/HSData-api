@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.3.0
+  version: 1.4.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -50,7 +50,7 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.3.0
+                    version: 1.4.0
                     status: ok
                     cards_total: 2352
                     heroes_total: 13
@@ -699,6 +699,45 @@ components:
       required:
         - name_en
         - name_ru
+    WikiPatchEntry:
+      type: object
+      properties:
+        patch:
+          type:
+            - string
+            - "null"
+        patch_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        date:
+          type:
+            - string
+            - "null"
+        items:
+          type: array
+          items:
+            type: string
+      required:
+        - patch
+        - patch_url
+        - date
+        - items
+    WikiPatchGroup:
+      type: object
+      properties:
+        heading:
+          type:
+            - string
+            - "null"
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/WikiPatchEntry"
+      required:
+        - heading
+        - entries
     WikiMeta:
       type: object
       properties:
@@ -769,6 +808,14 @@ components:
           items:
             type: object
             additionalProperties: true
+        related_card_ids:
+          type: array
+          items:
+            type: string
+        card_changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/WikiPatchGroup"
         fetched_at:
           type:
             - string
@@ -796,6 +843,8 @@ components:
         - sounds
         - external_links
         - related_cards
+        - related_card_ids
+        - card_changes
         - fetched_at
         - changed_at
     CardImages:
