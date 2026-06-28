@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.3.0`
+- Текущая версия API: `1.4.0`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -22,6 +22,8 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - механики из локальной базы с русскими названиями;
 - опциональные wiki-метаданные из `hearthstone.wiki.gg`;
 - звуки карты, artist, race, availability, external links и related cards из wiki;
+- card changes и простой список `related_card_ids`;
+- wiki-метаданные для tavern spells;
 - локализованные `Wiki mechanics` и `Wiki tags`, если для них уже заполнен русский перевод.
 - герои Полей сражений;
 - броня героя, броня в дуо и здоровье;
@@ -29,7 +31,7 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - компаньон/buddy на русском языке с картинками;
 - hero skins, gallery, full art, availability и card changes из wiki.
 
-На версии `1.3.0` публичный API отдает и карты, и героев. Синхронизация героев идет постепенно; список `/heroes` показывает только уже готовые записи со статусом `ok`.
+На версии `1.4.0` публичный API отдает карты, tavern spells и героев. Wiki-данные для карт включают `Availability`, `Wiki mechanics`, `Wiki tags`, `Related with`, `Card changes` и `External links`, когда эти блоки есть на wiki.
 
 ## Быстрый старт
 
@@ -322,6 +324,22 @@ curl 'https://db.kolodahs.ru/api/v1/cards/BG_AT_069/wiki'
       }
     ],
     "related_cards": [],
+    "related_card_ids": [],
+    "card_changes": [
+      {
+        "heading": "Card changes",
+        "entries": [
+          {
+            "patch": "Patch 27.2.0.183876",
+            "patch_url": "https://hearthstone.wiki.gg/wiki/Patch_27.2.0.183876",
+            "date": "2023-08-22",
+            "items": [
+              "Removed from the pool of available minions in Battlegrounds."
+            ]
+          }
+        ]
+      }
+    ],
     "fetched_at": "2026-06-28 00:27:48",
     "changed_at": "2026-06-28 00:27:48"
   }
@@ -346,12 +364,33 @@ curl 'https://db.kolodahs.ru/api/v1/cards/BG_AT_069/wiki'
 | `sounds` | Группы звуков и ссылки на audio-файлы |
 | `external_links` | Внешние ссылки из wiki |
 | `related_cards` | Карты из блока Related with, если найдены |
+| `related_card_ids` | Упрощенный список card ID из Related with |
+| `card_changes` | Card changes и Bug fixes в виде patch/date/items |
 | `fetched_at` | Когда wiki-данные были получены |
 | `changed_at` | Когда wiki-пакет для карты изменился |
 
 `name_ru` в локализованных wiki terms может быть `null`, если перевод еще не заполнен в базе. Английские массивы `wiki_mechanics` и `wiki_tags` сохраняются для обратной совместимости.
 
 Если wiki-данные для карты еще не синхронизированы, поле `wiki` в ответе с `include=wiki` будет `null`. Endpoint `/wiki` для такой карты вернет `404`.
+
+### Tavern spells wiki
+
+Таверн-спеллы запрашиваются теми же card endpoints, потому что они лежат в общем списке `/cards` с `card_type.slug = "spell"`:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/cards?card_type=spell&include=wiki&per_page=10'
+curl 'https://db.kolodahs.ru/api/v1/cards/BG28_168/wiki'
+```
+
+Для spells wiki-блок отдает те же поля:
+
+- `availability`;
+- `wiki_mechanics` и `wiki_mechanics_localized`;
+- `wiki_tags` и `wiki_tags_localized`;
+- `related_cards`;
+- `related_card_ids`;
+- `card_changes`;
+- `external_links`.
 
 ## Герои
 

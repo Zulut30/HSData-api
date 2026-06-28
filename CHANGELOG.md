@@ -2,6 +2,13 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.4.0 - 2026-06-28
+
+- В wiki-блок карт добавлены `related_card_ids` и `card_changes`.
+- Для всех существ добраны `Card changes` и простой список ID из `Related with`.
+- Добавлена wiki-синхронизация tavern spells: `Availability`, `Wiki mechanics`, `Wiki tags`, `Related with`, `Card changes`, `External links`.
+- README и OpenAPI обновлены под wiki-данные tavern spells и новые поля card wiki.
+
 ## 1.3.0 - 2026-06-28
 
 - Добавлены hero endpoints: `GET /api/v1/heroes`, `GET /api/v1/heroes/{card_id}`, `GET /api/v1/heroes/by-dbf/{dbf}`.
