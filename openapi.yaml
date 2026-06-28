@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.2.0
+  version: 1.3.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -28,6 +28,7 @@ paths:
                   - version
                   - status
                   - cards_total
+                  - heroes_total
                   - endpoints
                 properties:
                   name:
@@ -38,6 +39,8 @@ paths:
                     type: string
                   cards_total:
                     type: integer
+                  heroes_total:
+                    type: integer
                   endpoints:
                     type: object
                     additionalProperties:
@@ -47,9 +50,10 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.2.0
+                    version: 1.3.0
                     status: ok
                     cards_total: 2352
+                    heroes_total: 13
                     endpoints:
                       GET /api/v1: Описание API.
                       GET /api/v1/meta: Типы существ, уровни таверны и счетчики.
@@ -58,6 +62,9 @@ paths:
                       GET /api/v1/cards/{card_id}: Одна карта по card_id.
                       GET /api/v1/cards/{card_id}/wiki: Wiki-метаданные карты по card_id.
                       GET /api/v1/cards/by-dbf/{dbf}: Одна карта по dbf.
+                      GET /api/v1/heroes: Список героев Полей сражений.
+                      GET /api/v1/heroes/{card_id}: Один герой по card_id.
+                      GET /api/v1/heroes/by-dbf/{dbf}: Один герой по dbf.
   /meta:
     get:
       summary: API metadata
@@ -118,6 +125,7 @@ paths:
                       cards: 2352
                       minions: 2245
                       spells: 107
+                      heroes: 13
                       in_pool: 350
                       duos_only: 78
                       with_framed_image: 2352
@@ -402,6 +410,110 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WikiResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /heroes:
+    get:
+      summary: List Battlegrounds heroes
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search by Russian/English hero name, card_id, dbf, hero power, or buddy.
+        - name: dbf
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: updated_since
+          in: query
+          description: Return heroes with updated_at greater than or equal to this ISO 8601 timestamp.
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Paginated heroes.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeroListResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /heroes/{card_id}:
+    get:
+      summary: Get one Battlegrounds hero by card_id
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: TB_BaconShop_HERO_16
+      responses:
+        "200":
+          description: Hero.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeroResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /heroes/by-dbf/{dbf}:
+    get:
+      summary: Get one Battlegrounds hero by dbf
+      parameters:
+        - name: dbf
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          example: 57944
+      responses:
+        "200":
+          description: Hero.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeroResponse"
         "400":
           $ref: "#/components/responses/Error"
         "404":
@@ -740,6 +852,278 @@ components:
       required:
         - data
         - pagination
+    HeroCard:
+      type: object
+      description: Russian card payload for hero power or buddy from Blizzard API.
+      properties:
+        dbf:
+          type:
+            - integer
+            - "null"
+        name:
+          type:
+            - string
+            - "null"
+        text:
+          type:
+            - string
+            - "null"
+        image:
+          type:
+            - string
+            - "null"
+          format: uri
+        image_gold:
+          type:
+            - string
+            - "null"
+          format: uri
+        crop_image:
+          type:
+            - string
+            - "null"
+          format: uri
+        artist:
+          type:
+            - string
+            - "null"
+        parent_id:
+          type:
+            - integer
+            - "null"
+        card_type_id:
+          type:
+            - integer
+            - "null"
+    Hero:
+      type: object
+      properties:
+        card_id:
+          type: string
+        dbf:
+          type:
+            - integer
+            - "null"
+        hero_id:
+          type:
+            - integer
+            - "null"
+        name:
+          type: object
+          properties:
+            ru:
+              type:
+                - string
+                - "null"
+            en:
+              type:
+                - string
+                - "null"
+          required:
+            - ru
+            - en
+        health:
+          type:
+            - integer
+            - "null"
+        armor:
+          type: object
+          properties:
+            normal:
+              type:
+                - integer
+                - "null"
+            duos:
+              type:
+                - integer
+                - "null"
+            text:
+              type:
+                - string
+                - "null"
+          required:
+            - normal
+            - duos
+            - text
+        artist:
+          type:
+            - string
+            - "null"
+        race:
+          type:
+            - string
+            - "null"
+        character:
+          type: object
+          properties:
+            name:
+              type:
+                - string
+                - "null"
+            as_hero:
+              type:
+                - string
+                - "null"
+            description:
+              type:
+                - string
+                - "null"
+          required:
+            - name
+            - as_hero
+            - description
+        images:
+          type: object
+          properties:
+            hero:
+              type:
+                - string
+                - "null"
+              format: uri
+            full_art:
+              type:
+                - string
+                - "null"
+              format: uri
+          required:
+            - hero
+            - full_art
+        hero_power:
+          type: object
+          properties:
+            dbf:
+              type:
+                - integer
+                - "null"
+            card:
+              oneOf:
+                - $ref: "#/components/schemas/HeroCard"
+                - type: "null"
+          required:
+            - dbf
+            - card
+        buddy:
+          type: object
+          properties:
+            dbf:
+              type:
+                - integer
+                - "null"
+            card:
+              oneOf:
+                - $ref: "#/components/schemas/HeroCard"
+                - type: "null"
+          required:
+            - dbf
+            - card
+        wiki:
+          $ref: "#/components/schemas/HeroWiki"
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - card_id
+        - dbf
+        - hero_id
+        - name
+        - health
+        - armor
+        - artist
+        - race
+        - character
+        - images
+        - hero_power
+        - buddy
+        - wiki
+        - created_at
+        - updated_at
+    HeroWiki:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, missing, error]
+        page:
+          type: object
+          properties:
+            title:
+              type:
+                - string
+                - "null"
+            url:
+              type:
+                - string
+                - "null"
+              format: uri
+          required:
+            - title
+            - url
+        availability:
+          type: object
+          additionalProperties: true
+        hero_skins:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        gallery:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        card_changes:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        external_links:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        fetched_at:
+          type:
+            - string
+            - "null"
+        changed_at:
+          type:
+            - string
+            - "null"
+        error:
+          type:
+            - string
+            - "null"
+      required:
+        - status
+        - page
+        - availability
+        - hero_skins
+        - gallery
+        - card_changes
+        - external_links
+        - fetched_at
+        - changed_at
+        - error
+    HeroResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Hero"
+      required:
+        - data
+    HeroListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Hero"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - data
+        - pagination
     Pagination:
       type: object
       properties:
@@ -771,6 +1155,8 @@ components:
           type: integer
         spells:
           type: integer
+        heroes:
+          type: integer
         in_pool:
           type: integer
         duos_only:
@@ -781,6 +1167,7 @@ components:
         - cards
         - minions
         - spells
+        - heroes
         - in_pool
         - duos_only
         - with_framed_image
