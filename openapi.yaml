@@ -1103,10 +1103,6 @@ components:
           required:
             - ru
             - en
-        flavor:
-          type:
-            - string
-            - "null"
         tavern_tier:
           type:
             - integer
@@ -1175,7 +1171,6 @@ components:
         - card_type
         - name
         - text
-        - flavor
         - images
         - golden
         - wiki

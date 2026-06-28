@@ -31,7 +31,7 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - компаньон/buddy на русском языке с картинками;
 - hero skins, gallery, full art, availability и card changes из wiki.
 - отдельная категория хрономальных карт Timewarped Tavern;
-- для Timewarped-карт: русская основная карта, золотая версия, `Flavor`, `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes` и `External links`.
+- для Timewarped-карт: русская основная карта, золотая версия, `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes` и `External links`.
 
 На версии `1.5.0` публичный API отдает карты, tavern spells, героев и отдельную категорию Timewarped Tavern. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок для обычных карт по-прежнему подключается через `include=wiki`.
 
@@ -455,7 +455,6 @@ curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/by-dbf/126343'
     "ru": "В конце вашего хода призывает домашнюю кошку с характеристиками этого существа.",
     "en": "At the end of your turn, summon a Tabbycat with this minion's stats."
   },
-  "flavor": "To be a cool cat in Gadgetzan, you gotta have bling.",
   "tavern_tier": 3,
   "attack": 7,
   "health": 7,
