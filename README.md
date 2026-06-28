@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.6.0`
+- Текущая версия API: `1.7.0`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -32,10 +32,11 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - hero skins, gallery, full art, availability и card changes из wiki.
 - отдельная категория хрономальных карт Timewarped Tavern;
 - для Timewarped-карт: русская основная карта, золотая версия, `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes` и `External links`.
-- библиотеки аномалий, квестов, призов Ярмарки Новолуния и наград;
+- библиотеки аномалий, квестов, призов Ярмарки Новолуния, наград и аксессуаров;
 - для библиотек: русские названия, русский текст, картинки, `in_pool`, `pool_status`, wiki-ссылка.
+- для аксессуаров: разделение на `lesser` / `greater` и русские группы “Малый аксессуар” / “Большой аксессуар”.
 
-На версии `1.6.0` публичный API отдает карты, tavern spells, героев, Timewarped Tavern и отдельные библиотеки аномалий/квестов/призов/наград. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок для обычных карт по-прежнему подключается через `include=wiki`.
+На версии `1.7.0` публичный API отдает карты, tavern spells, героев, Timewarped Tavern и отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок для обычных карт по-прежнему подключается через `include=wiki`.
 
 ## Быстрый старт
 
@@ -95,13 +96,14 @@ curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/BG34_Giant_009'
 curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/by-dbf/126343'
 ```
 
-Получить библиотеки аномалий, квестов, призов и наград:
+Получить библиотеки аномалий, квестов, призов, наград и аксессуаров:
 
 ```bash
 curl 'https://db.kolodahs.ru/api/v1/anomalies?in_pool=1'
 curl 'https://db.kolodahs.ru/api/v1/quests?in_pool=0'
 curl 'https://db.kolodahs.ru/api/v1/darkmoon-prizes'
 curl 'https://db.kolodahs.ru/api/v1/rewards'
+curl 'https://db.kolodahs.ru/api/v1/trinkets?group=lesser&in_pool=1'
 curl 'https://db.kolodahs.ru/api/v1/libraries/anomaly/BGDUO_Anomaly_005'
 ```
 
@@ -141,7 +143,8 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `GET` | `/api/v1/quests` | Библиотека квестов |
 | `GET` | `/api/v1/darkmoon-prizes` | Библиотека призов Ярмарки Новолуния |
 | `GET` | `/api/v1/rewards` | Библиотека наград |
-| `GET` | `/api/v1/libraries/{library}` | Универсальный endpoint: `anomaly`, `quest`, `darkmoon_prize`, `reward` |
+| `GET` | `/api/v1/trinkets` | Библиотека аксессуаров |
+| `GET` | `/api/v1/libraries/{library}` | Универсальный endpoint: `anomaly`, `quest`, `darkmoon_prize`, `reward`, `trinket` |
 | `GET` | `/api/v1/libraries/{library}/{card_id}` | Одна запись библиотеки по `card_id` |
 | `GET` | `/api/v1/libraries/{library}/by-dbf/{dbf}` | Одна запись библиотеки по `dbf` |
 
@@ -519,6 +522,7 @@ curl 'https://db.kolodahs.ru/api/v1/anomalies?in_pool=1'
 curl 'https://db.kolodahs.ru/api/v1/quests?in_pool=0'
 curl 'https://db.kolodahs.ru/api/v1/darkmoon-prizes'
 curl 'https://db.kolodahs.ru/api/v1/rewards'
+curl 'https://db.kolodahs.ru/api/v1/trinkets?group=greater&status=removed'
 ```
 
 Поддерживаемые библиотеки:
@@ -529,6 +533,7 @@ curl 'https://db.kolodahs.ru/api/v1/rewards'
 | `/api/v1/quests` | `quest` | Квесты. Доступные и удаленные разделяются по `Quests` / `Removed Quests` |
 | `/api/v1/darkmoon-prizes` | `darkmoon_prize` | Призы Ярмарки Новолуния. Доступные и удаленные разделяются по wiki.gg |
 | `/api/v1/rewards` | `reward` | Награды из официального Blizzard списка `bgCardType=reward` |
+| `/api/v1/trinkets` | `trinket` | Аксессуары. Доступные и удаленные берутся с wiki.gg, группа определяется как `lesser` или `greater` |
 
 Параметры списка:
 
@@ -538,6 +543,7 @@ curl 'https://db.kolodahs.ru/api/v1/rewards'
 | `dbf` | integer | Точный поиск по DBF |
 | `in_pool` | `0`/`1` | `1` — доступные, `0` — удаленные/не в пуле |
 | `status` | string | `available` или `removed` |
+| `group` | string | Только для аксессуаров: `lesser` или `greater` |
 | `updated_since` | ISO 8601 datetime | Только записи, измененные начиная с указанного времени |
 | `page` | integer | Страница, по умолчанию `1` |
 | `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
@@ -567,6 +573,10 @@ curl 'https://db.kolodahs.ru/api/v1/rewards'
   },
   "in_pool": true,
   "pool_status": "available",
+  "group": {
+    "slug": null,
+    "name_ru": null
+  },
   "wiki_page": {
     "title": "Battlegrounds/All Bottled Up",
     "url": "https://hearthstone.wiki.gg/wiki/Battlegrounds/All_Bottled_Up"
@@ -741,7 +751,7 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
 | `creature_types` | Справочник типов существ |
 | `card_types` | Справочник типов карт |
 | `mechanics` | Справочник локальных механик |
-| `libraries` | Справочник библиотек: anomaly, quest, darkmoon_prize, reward |
+| `libraries` | Справочник библиотек: anomaly, quest, darkmoon_prize, reward, trinket |
 | `tavern_tiers` | Уровни таверны |
 | `counts_by_tier` | Счетчики по уровню таверны |
 | `counts_by_creature_type` | Счетчики по типу существа |
@@ -755,7 +765,7 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
 3. Сохраняйте карты по ключу `card_id`; `dbf` удобен для поиска, но `card_id` лучше как стабильный primary key.
 4. Если нужны звуки, artist, external links и related cards, используйте `include=wiki`.
 5. Для Timewarped Tavern синхронизируйте отдельный ресурс `/api/v1/timewarped-cards`.
-6. Для аномалий, квестов, призов и наград синхронизируйте `/api/v1/libraries/{library}` или короткие endpoints.
+6. Для аномалий, квестов, призов, наград и аксессуаров синхронизируйте `/api/v1/libraries/{library}` или короткие endpoints.
 
 Для последующих обновлений:
 

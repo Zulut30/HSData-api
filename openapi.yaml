@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.6.0
+  version: 1.7.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -56,12 +56,12 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.6.0
+                    version: 1.7.0
                     status: ok
                     cards_total: 2352
                     heroes_total: 119
                     timewarped_total: 161
-                    library_total: 204
+                    library_total: 524
                     endpoints:
                       GET /api/v1: Описание API.
                       GET /api/v1/meta: Типы существ, уровни таверны и счетчики.
@@ -80,6 +80,7 @@ paths:
                       GET /api/v1/quests: Библиотека квестов.
                       GET /api/v1/darkmoon-prizes: Библиотека призов Ярмарки Новолуния.
                       GET /api/v1/rewards: Библиотека наград.
+                      GET /api/v1/trinkets: Библиотека аксессуаров.
                       GET /api/v1/libraries/{library}: Универсальный доступ к библиотекам.
   /meta:
     get:
@@ -143,7 +144,7 @@ paths:
                       spells: 107
                       heroes: 13
                       timewarped: 161
-                      libraries: 204
+                      libraries: 524
                       in_pool: 350
                       duos_only: 78
                       with_framed_image: 2352
@@ -618,6 +619,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LibraryCardListResponse"
+  /trinkets:
+    get:
+      summary: List Battlegrounds trinkets
+      parameters:
+        - $ref: "#/components/parameters/LibraryQuery"
+        - $ref: "#/components/parameters/LibraryDbfQuery"
+        - $ref: "#/components/parameters/LibraryInPoolQuery"
+        - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/LibraryGroupQuery"
+        - $ref: "#/components/parameters/UpdatedSinceQuery"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/PerPageQuery"
+      responses:
+        "200":
+          description: Paginated trinket library cards. Use group=lesser or group=greater to split lesser and greater trinkets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryCardListResponse"
   /libraries/{library}:
     get:
       summary: List one auxiliary Battlegrounds library
@@ -627,6 +647,7 @@ paths:
         - $ref: "#/components/parameters/LibraryDbfQuery"
         - $ref: "#/components/parameters/LibraryInPoolQuery"
         - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/LibraryGroupQuery"
         - $ref: "#/components/parameters/UpdatedSinceQuery"
         - $ref: "#/components/parameters/PageQuery"
         - $ref: "#/components/parameters/PerPageQuery"
@@ -655,7 +676,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LibraryCardResponse"
+                $ref: "#/components/schemas/HeroResponse"
         "404":
           $ref: "#/components/responses/Error"
   /libraries/{library}/by-dbf/{dbf}:
@@ -805,7 +826,7 @@ components:
       required: true
       schema:
         type: string
-        enum: [anomaly, quest, darkmoon_prize, reward]
+        enum: [anomaly, quest, darkmoon_prize, reward, trinket]
     LibraryQuery:
       name: q
       in: query
@@ -831,6 +852,13 @@ components:
       schema:
         type: string
         enum: [available, removed]
+    LibraryGroupQuery:
+      name: group
+      in: query
+      schema:
+        type: string
+        enum: [lesser, greater]
+      description: Trinkets only. lesser = малые аксессуары, greater = большие аксессуары.
     UpdatedSinceQuery:
       name: updated_since
       in: query
@@ -1401,7 +1429,7 @@ components:
           properties:
             slug:
               type: string
-              enum: [anomaly, quest, darkmoon_prize, reward]
+              enum: [anomaly, quest, darkmoon_prize, reward, trinket]
             name_ru:
               type: string
           required:
@@ -1477,6 +1505,21 @@ components:
         pool_status:
           type: string
           enum: [available, removed]
+        group:
+          type: object
+          properties:
+            slug:
+              type:
+                - string
+                - "null"
+              enum: [lesser, greater, null]
+            name_ru:
+              type:
+                - string
+                - "null"
+          required:
+            - slug
+            - name_ru
         wiki_page:
           oneOf:
             - $ref: "#/components/schemas/WikiPage"
@@ -1504,6 +1547,7 @@ components:
         - images
         - in_pool
         - pool_status
+        - group
         - wiki_page
         - source
         - created_at

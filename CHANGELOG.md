@@ -2,6 +2,14 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.7.0 - 2026-06-28
+
+- Добавлена библиотека аксессуаров: `GET /api/v1/trinkets` и универсальный `GET /api/v1/libraries/trinket`.
+- Аксессуары разделяются на `lesser` / `greater` через поле `group` с русскими названиями “Малый аксессуар” и “Большой аксессуар”.
+- Для аксессуаров доступны фильтры `in_pool`, `status`, `group`, `q`, `dbf`, `updated_since`, пагинация и lookup по `card_id` / `dbf`.
+- Список доступных и удаленных аксессуаров берется с `hearthstone.wiki.gg/wiki/Battlegrounds/Trinket`, русские названия и картинки подтягиваются из Blizzard/HearthstoneJSON.
+- В `GET /api/v1`, `GET /api/v1/meta` и OpenAPI добавлена библиотека `trinket`.
+
 ## 1.6.0 - 2026-06-28
 
 - Добавлены отдельные библиотеки: `anomalies`, `quests`, `darkmoon-prizes`, `rewards`.
