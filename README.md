@@ -35,8 +35,11 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - библиотеки аномалий, квестов, призов Ярмарки Новолуния, наград и аксессуаров;
 - для библиотек: русские названия, русский текст, картинки, `in_pool`, `pool_status`, wiki-ссылка.
 - для аксессуаров: разделение на `lesser` / `greater` и русские группы “Малый аксессуар” / “Большой аксессуар”.
+- отдельная база карт стандартного и вольного форматов Hearthstone;
+- для Standard/Wild: русская основная карта из Blizzard API, EN/RU текст, flavor, сет, класс, тип, редкость, характеристики и изображения;
+- для Standard/Wild wiki-метаданных: `Gallery`, `Patch changes`, `External links`, `Golden cards`, `Signature cards`, `Related cards`, `Wiki mechanics`, `Wiki tags`, `Ban lists` и `Sounds`.
 
-На версии `1.7.0` публичный API отдает карты, tavern spells, героев, Timewarped Tavern и отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок для обычных карт по-прежнему подключается через `include=wiki`.
+На версии `1.7.0` публичный API отдает карты, tavern spells, героев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
 
 ## Быстрый старт
 
@@ -96,6 +99,16 @@ curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/BG34_Giant_009'
 curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/by-dbf/126343'
 ```
 
+Получить карты стандартного и вольного форматов:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/constructed-cards?format=standard&per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/constructed-cards?format=wild&q=серджант&include=wiki'
+curl 'https://db.kolodahs.ru/api/v1/constructed-cards/CORE_CS2_188?include=wiki'
+curl 'https://db.kolodahs.ru/api/v1/constructed-cards/by-dbf/69649?include=wiki'
+curl 'https://db.kolodahs.ru/api/v1/constructed-cards/CORE_CS2_188/wiki'
+```
+
 Получить библиотеки аномалий, квестов, призов, наград и аксессуаров:
 
 ```bash
@@ -139,6 +152,15 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `GET` | `/api/v1/timewarped-cards` | Список хрономальных карт Timewarped Tavern |
 | `GET` | `/api/v1/timewarped-cards/{card_id}` | Одна хрономальная карта по `card_id` |
 | `GET` | `/api/v1/timewarped-cards/by-dbf/{dbf}` | Одна хрономальная карта по `dbf` |
+| `GET` | `/api/v1/constructed-cards` | Список карт Standard/Wild с фильтрами и пагинацией |
+| `GET` | `/api/v1/constructed-cards?format=standard` | Карты стандартного формата |
+| `GET` | `/api/v1/constructed-cards?format=wild&include=wiki` | Карты вольного формата с wiki-метаданными |
+| `GET` | `/api/v1/constructed-cards/{card_id}` | Одна карта Standard/Wild по `card_id` |
+| `GET` | `/api/v1/constructed-cards/{card_id}?include=wiki` | Одна карта Standard/Wild с wiki-метаданными |
+| `GET` | `/api/v1/constructed-cards/{card_id}/wiki` | Только wiki-метаданные карты Standard/Wild |
+| `GET` | `/api/v1/constructed-cards/by-dbf/{dbf}` | Одна карта Standard/Wild по `dbf` |
+| `GET` | `/api/v1/constructed-cards/by-dbf/{dbf}?include=wiki` | Одна карта Standard/Wild по `dbf` с wiki-метаданными |
+| `GET` | `/api/v1/constructed-cards/by-dbf/{dbf}/wiki` | Только wiki-метаданные карты Standard/Wild по `dbf` |
 | `GET` | `/api/v1/anomalies` | Библиотека аномалий |
 | `GET` | `/api/v1/quests` | Библиотека квестов |
 | `GET` | `/api/v1/darkmoon-prizes` | Библиотека призов Ярмарки Новолуния |
@@ -169,6 +191,26 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
 
 `updated_since` использует сравнение `updated_at >= updated_since`, чтобы синк по последней секунде не терял карты. На стороне клиента лучше дедуплицировать результат по `card_id`.
+
+## Фильтры Standard/Wild
+
+`GET /api/v1/constructed-cards`
+
+| Параметр | Тип | Описание |
+|---|---:|---|
+| `format` | string | `all`, `standard` или `wild`, по умолчанию `all` |
+| `q` | string | Поиск по RU/EN названию, `card_id`, `dbf`, тексту и flavor |
+| `dbf` | integer | Точный поиск по `dbf` |
+| `collectible` | `0`/`1` | Только коллекционные или неколлекционные карты |
+| `card_type` | string | Тип карты из Blizzard/HearthstoneJSON, например `MINION`, `SPELL`, `WEAPON` |
+| `class` | string | Класс карты, например `MAGE`, `HUNTER`, `NEUTRAL` |
+| `set` | string | Набор карты, например `CORE` |
+| `updated_since` | ISO 8601 datetime | Только карты, измененные начиная с указанного времени |
+| `include` | string | `include=wiki` добавляет wiki-блок, если он уже синхронизирован |
+| `page` | integer | Страница, по умолчанию `1` |
+| `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
+
+Wiki-поля Standard/Wild заполняются отдельной фоновой синхронизацией с `hearthstone.wiki.gg`. Если `include=wiki` вернул `wiki: null`, значит сама карта уже есть в базе, а тяжелые wiki-данные еще стоят в очереди синхронизации.
 
 ## Ответ списка
 
