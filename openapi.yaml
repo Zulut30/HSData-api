@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.1.0
+  version: 1.2.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -47,14 +47,17 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.1.0
+                    version: 1.2.0
                     status: ok
-                    cards_total: 946
+                    cards_total: 2352
                     endpoints:
-                      meta: /api/v1/meta
-                      cards: /api/v1/cards
-                      card_by_id: /api/v1/cards/{card_id}
-                      card_by_dbf: /api/v1/cards/by-dbf/{dbf}
+                      GET /api/v1: Описание API.
+                      GET /api/v1/meta: Типы существ, уровни таверны и счетчики.
+                      GET /api/v1/cards: Список карт с фильтрами и пагинацией.
+                      GET /api/v1/cards?include=wiki: Список карт с wiki-метаданными, если они синхронизированы.
+                      GET /api/v1/cards/{card_id}: Одна карта по card_id.
+                      GET /api/v1/cards/{card_id}/wiki: Wiki-метаданные карты по card_id.
+                      GET /api/v1/cards/by-dbf/{dbf}: Одна карта по dbf.
   /meta:
     get:
       summary: API metadata
@@ -76,6 +79,7 @@ paths:
                   - totals
                   - creature_types
                   - mechanics
+                  - card_types
                   - tavern_tiers
                   - counts_by_tier
                   - counts_by_creature_type
@@ -90,6 +94,10 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Mechanic"
+                  card_types:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CardType"
                   tavern_tiers:
                     type: array
                     items:
@@ -107,10 +115,12 @@ paths:
                   summary: Metadata with mechanics
                   value:
                     totals:
-                      cards: 946
-                      in_pool: 277
-                      duos_only: 29
-                      with_framed_image: 946
+                      cards: 2352
+                      minions: 2245
+                      spells: 107
+                      in_pool: 350
+                      duos_only: 78
+                      with_framed_image: 2352
                     creature_types:
                       - slug: all
                         name_ru: Общие
@@ -125,6 +135,11 @@ paths:
                         name_ru: Начало боя
                       - slug: DIVINE_SHIELD
                         name_ru: Божественный щит
+                    card_types:
+                      - slug: minion
+                        name_ru: Существо
+                      - slug: spell
+                        name_ru: Заклинание
                     tavern_tiers: [1, 2, 3, 4, 5, 6, 7]
                     counts_by_tier:
                       - tavern_tier: 1
@@ -157,6 +172,17 @@ paths:
           schema:
             type: integer
             minimum: 0
+        - name: card_type
+          in: query
+          schema:
+            type: string
+            enum: [minion, spell]
+        - name: include
+          in: query
+          description: Pass `wiki` to include wiki metadata in each returned card when synchronized.
+          schema:
+            type: string
+            enum: [wiki]
         - name: in_pool
           in: query
           schema:
@@ -209,6 +235,9 @@ paths:
                       - id: 15
                         card_id: BG26_146
                         dbf: 98582
+                        card_type:
+                          slug: minion
+                          name_ru: Существо
                         name:
                           ru: Баюбот
                           en: Lullabot
@@ -260,6 +289,12 @@ paths:
             type: integer
             minimum: 0
           example: 95267
+        - name: include
+          in: query
+          description: Pass `wiki` to include wiki metadata in the returned card when synchronized.
+          schema:
+            type: string
+            enum: [wiki]
       responses:
         "200":
           description: Card.
@@ -291,6 +326,12 @@ paths:
           schema:
             type: string
           example: BG25_011
+        - name: include
+          in: query
+          description: Pass `wiki` to include wiki metadata in the returned card when synchronized.
+          schema:
+            type: string
+            enum: [wiki]
       responses:
         "200":
           description: Card.
@@ -308,6 +349,61 @@ paths:
               examples:
                 nerubianDeathswarmer:
                   $ref: "#/components/examples/NerubianDeathswarmer"
+        "404":
+          $ref: "#/components/responses/Error"
+  /cards/{card_id}/wiki:
+    get:
+      summary: Get wiki metadata by card_id
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: BG_AT_069
+      responses:
+        "200":
+          description: Wiki metadata.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WikiResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /cards/by-dbf/{dbf}/wiki:
+    get:
+      summary: Get wiki metadata by dbf
+      parameters:
+        - name: dbf
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          example: 92878
+      responses:
+        "200":
+          description: Wiki metadata.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WikiResponse"
+        "400":
+          $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
 components:
@@ -383,6 +479,18 @@ components:
       required:
         - slug
         - name_ru
+    CardType:
+      type: object
+      properties:
+        slug:
+          type: string
+          enum: [minion, spell]
+        name_ru:
+          type: string
+          enum: [Существо, Заклинание]
+      required:
+        - slug
+        - name_ru
     Card:
       type: object
       properties:
@@ -394,6 +502,8 @@ components:
           type:
             - integer
             - "null"
+        card_type:
+          $ref: "#/components/schemas/CardType"
         name:
           type: object
           properties:
@@ -443,10 +553,16 @@ components:
         updated_at:
           type: string
           example: "2026-06-12 20:16:17"
+        wiki:
+          oneOf:
+            - $ref: "#/components/schemas/WikiMeta"
+            - type: "null"
+          description: Present only when `include=wiki` is requested.
       required:
         - id
         - card_id
         - dbf
+        - card_type
         - name
         - tavern_tier
         - creature_type
@@ -459,6 +575,117 @@ components:
         - images
         - created_at
         - updated_at
+    WikiTermLocalized:
+      type: object
+      properties:
+        name_en:
+          type: string
+        name_ru:
+          type:
+            - string
+            - "null"
+      required:
+        - name_en
+        - name_ru
+    WikiMeta:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, missing, error]
+        source:
+          type: string
+          example: hearthstone.wiki.gg
+        page:
+          type: object
+          properties:
+            title:
+              type:
+                - string
+                - "null"
+            url:
+              type:
+                - string
+                - "null"
+              format: uri
+          required:
+            - title
+            - url
+        artist:
+          type:
+            - string
+            - "null"
+        race:
+          type:
+            - string
+            - "null"
+        minion_type:
+          type:
+            - string
+            - "null"
+        wiki_mechanics:
+          type: array
+          items:
+            type: string
+        wiki_mechanics_localized:
+          type: array
+          items:
+            $ref: "#/components/schemas/WikiTermLocalized"
+        wiki_tags:
+          type: array
+          items:
+            type: string
+        wiki_tags_localized:
+          type: array
+          items:
+            $ref: "#/components/schemas/WikiTermLocalized"
+        availability:
+          type: object
+          additionalProperties: true
+        sounds:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        external_links:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        related_cards:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        fetched_at:
+          type:
+            - string
+            - "null"
+        changed_at:
+          type:
+            - string
+            - "null"
+        error:
+          type:
+            - string
+            - "null"
+      required:
+        - status
+        - source
+        - page
+        - artist
+        - race
+        - minion_type
+        - wiki_mechanics
+        - wiki_mechanics_localized
+        - wiki_tags
+        - wiki_tags_localized
+        - availability
+        - sounds
+        - external_links
+        - related_cards
+        - fetched_at
+        - changed_at
     CardImages:
       type: object
       properties:
@@ -492,6 +719,13 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Card"
+      required:
+        - data
+    WikiResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/WikiMeta"
       required:
         - data
     CardListResponse:
@@ -533,6 +767,10 @@ components:
       properties:
         cards:
           type: integer
+        minions:
+          type: integer
+        spells:
+          type: integer
         in_pool:
           type: integer
         duos_only:
@@ -541,6 +779,8 @@ components:
           type: integer
       required:
         - cards
+        - minions
+        - spells
         - in_pool
         - duos_only
         - with_framed_image
@@ -596,6 +836,9 @@ components:
           id: 9
           card_id: BG25_011
           dbf: 95267
+          card_type:
+            slug: minion
+            name_ru: Существо
           name:
             ru: Неруб-смертороевик
             en: Nerubian Deathswarmer
