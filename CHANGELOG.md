@@ -2,6 +2,15 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.8.0 - 2026-06-30
+
+- Добавлена отдельная библиотека скинов героев Hearthstone: `GET /api/v1/hero-skins`, `GET /api/v1/hero-skins/{card_id}`, `GET /api/v1/hero-skins/by-dbf/{dbf}`.
+- Синхронизирован 701 hero skin со страницы `Hero skin` и связанных страниц Hearthstone Wiki.
+- Для скинов доступны static portrait, animated GIF, animated asset IDs, full art, class, character, actor, artist, gallery, sounds, категории, tags и wiki-ссылка.
+- Добавлены фильтры `q`, `dbf`, `class`, `category`, `has_animated`, `has_gallery`, `has_sounds`, `updated_since`, `page`, `per_page`.
+- В `GET /api/v1` добавлен счетчик `hero_skins_total` и hero skin endpoints.
+- В `GET /api/v1/meta` добавлен счетчик `totals.hero_skins`; README и OpenAPI обновлены под новый ресурс.
+
 ## 1.7.0 - 2026-06-28
 
 - Добавлена библиотека аксессуаров: `GET /api/v1/trinkets` и универсальный `GET /api/v1/libraries/trinket`.

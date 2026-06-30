@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.7.0`
+- Текущая версия API: `1.8.0`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -29,7 +29,9 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - броня героя, броня в дуо и здоровье;
 - сила героя на русском языке с картинками;
 - компаньон/buddy на русском языке с картинками;
-- hero skins, gallery, full art, availability и card changes из wiki.
+- hero skins внутри wiki-блока героя: gallery, full art, availability и card changes;
+- отдельная библиотека скинов героев Hearthstone;
+- для скинов героев: static portrait, animated GIF, animated asset IDs, full art, class, character, actor, gallery, sounds, категории и wiki-ссылка;
 - отдельная категория хрономальных карт Timewarped Tavern;
 - для Timewarped-карт: русская основная карта, золотая версия, `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes` и `External links`.
 - библиотеки аномалий, квестов, призов Ярмарки Новолуния, наград и аксессуаров;
@@ -39,7 +41,7 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - для Standard/Wild: русская основная карта из Blizzard API, EN/RU текст, flavor, сет, класс, тип, редкость, характеристики и изображения;
 - для Standard/Wild wiki-метаданных: `Gallery`, `Patch changes`, `External links`, `Golden cards`, `Signature cards`, `Related cards`, `Wiki mechanics`, `Wiki tags`, `Ban lists` и `Sounds`.
 
-На версии `1.7.0` публичный API отдает карты, tavern spells, героев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
+На версии `1.8.0` публичный API отдает карты, tavern spells, героев, отдельную библиотеку скинов героев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
 
 ## Быстрый старт
 
@@ -89,6 +91,16 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/TB_BaconShop_HERO_16'
 
 ```bash
 curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
+```
+
+Получить скины героев Hearthstone:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/hero-skins?per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins?class=deathknight&has_animated=1'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins?category=1800_gold_skins'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins/HERO_11b'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins/by-dbf/93448'
 ```
 
 Получить хрономальные карты Timewarped Tavern:
@@ -149,6 +161,9 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `GET` | `/api/v1/heroes` | Список героев с пагинацией |
 | `GET` | `/api/v1/heroes/{card_id}` | Один герой по `card_id` |
 | `GET` | `/api/v1/heroes/by-dbf/{dbf}` | Один герой по `dbf` |
+| `GET` | `/api/v1/hero-skins` | Список скинов героев Hearthstone |
+| `GET` | `/api/v1/hero-skins/{card_id}` | Один скин героя по `card_id` |
+| `GET` | `/api/v1/hero-skins/by-dbf/{dbf}` | Один скин героя по `dbf` |
 | `GET` | `/api/v1/timewarped-cards` | Список хрономальных карт Timewarped Tavern |
 | `GET` | `/api/v1/timewarped-cards/{card_id}` | Одна хрономальная карта по `card_id` |
 | `GET` | `/api/v1/timewarped-cards/by-dbf/{dbf}` | Одна хрономальная карта по `dbf` |
@@ -775,6 +790,136 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
 | `wiki.external_links` | Внешние ссылки |
 | `fetched_at`, `changed_at`, `updated_at` | Времена синхронизации и обновления |
 
+## Скины героев
+
+Скины героев вынесены в отдельную библиотеку, потому что это не только Battlegrounds-герои. Сейчас API отдает 701 скин со страницы `Hero skin` на Hearthstone Wiki и связанных wiki-страниц.
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/hero-skins?per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins?class=mage&has_gallery=1'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins?category=bundle_skins&has_sounds=1'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins/HERO_11b'
+curl 'https://db.kolodahs.ru/api/v1/hero-skins/by-dbf/93448'
+```
+
+### Фильтры списка скинов
+
+`GET /api/v1/hero-skins`
+
+| Параметр | Тип | Описание |
+|---|---:|---|
+| `q` | string | Поиск по имени скина, `card_id`, `dbf`, персонажу, актеру, artist, классу или категории |
+| `dbf` | integer | Точный поиск по `dbf` |
+| `class` | string | Класс героя, например `deathknight`, `mage`, `warrior`, `neutral` |
+| `category` | string | Категория wiki, например `1800_gold_skins`, `2500_runestone_skins`, `bundle_skins`, `legendary_skins`, `mythic_skins`, `other_portraits`, `unavailable` |
+| `has_animated` | `0`/`1` | Только скины с animated GIF или animated asset IDs |
+| `has_gallery` | `0`/`1` | Только скины с gallery |
+| `has_sounds` | `0`/`1` | Только скины со sounds |
+| `updated_since` | ISO 8601 datetime | Только скины, измененные начиная с указанного времени |
+| `page` | integer | Страница, по умолчанию `1` |
+| `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
+
+`has_animated=1` считает скин анимированным, если заполнено `images.animated` или есть хотя бы один элемент в `images.animated_assets`. У части новых или премиальных скинов wiki не отдает готовый GIF, но отдает asset IDs, по которым клиент может связать анимированную версию с игровыми ассетами.
+
+### Формат скина героя
+
+```json
+{
+  "card_id": "HERO_11b",
+  "dbf": 93448,
+  "name": {
+    "en": "Arthas Menethil"
+  },
+  "class": {
+    "id": 1,
+    "slug": "deathknight",
+    "name_en": "Death Knight",
+    "name_ru": "Рыцарь смерти"
+  },
+  "health": 30,
+  "character": "Arthas Menethil",
+  "actor": "Patrick Seitz",
+  "artist": "TKG",
+  "category": {
+    "slug": "legendary_skins",
+    "name_en": "Legendary skins",
+    "name_ru": "Легендарные скины"
+  },
+  "categories": [
+    {
+      "slug": "bundle_skins",
+      "name_en": "Bundle skins",
+      "name_ru": "Скины наборов"
+    }
+  ],
+  "tags": [
+    "Legendary skins",
+    "Bundle purchasable heroes"
+  ],
+  "images": {
+    "static": "https://hearthstone.wiki.gg/wiki/Special:Redirect/file/HERO_11b.png",
+    "animated": null,
+    "animated_assets": [
+      {
+        "asset": "HERO_11b_Premium@",
+        "kind": "main_premium"
+      }
+    ],
+    "full_art": "https://hearthstone.wiki.gg/wiki/Special:Redirect/file/Arthas_Menethil_(Death_Knight)_full.jpg"
+  },
+  "gallery": [
+    {
+      "caption": "Arthas Menethil, full art",
+      "file_title": null,
+      "file_url": "https://hearthstone.wiki.gg/images/thumb/Arthas_Menethil_(Death_Knight)_full.jpg/667px-Arthas_Menethil_(Death_Knight)_full.jpg"
+    }
+  ],
+  "sounds": [
+    {
+      "file_title": "VO_HERO_11b_Male_Human_Greeting_01.wav",
+      "file_url": "https://hearthstone.wiki.gg/images/VO_HERO_11b_Male_Human_Greeting_01.wav",
+      "transcript": "The cold hand of death reaches out.",
+      "type": "Greeting"
+    }
+  ],
+  "wiki_page": {
+    "title": "Arthas Menethil",
+    "url": "https://hearthstone.wiki.gg/wiki/Arthas_Menethil"
+  },
+  "status": "ok",
+  "error": null,
+  "fetched_at": "2026-06-30 11:53:32",
+  "changed_at": "2026-06-30 11:53:32",
+  "created_at": "2026-06-30 11:53:32",
+  "updated_at": "2026-06-30 11:53:32"
+}
+```
+
+### Поля скина героя
+
+| Поле | Описание |
+|---|---|
+| `card_id` | Hearthstone card ID скина |
+| `dbf` | DBF скина, если найден |
+| `name.en` | Английское название скина с wiki |
+| `class` | Класс героя с `id`, `slug`, английским и русским названием |
+| `health` | Здоровье портрета, обычно `30` |
+| `character` | Character из wiki |
+| `actor` | Voice actor / Actor из wiki |
+| `artist` | Artist из wiki |
+| `category` | Основная категория скина |
+| `categories` | Все найденные категории с wiki, включая ценовые и availability-группы |
+| `tags` | Сырые wiki-теги/категории, полезные для аудита |
+| `images.static` | Статичный портрет |
+| `images.animated` | Готовый animated GIF, если wiki отдает файл |
+| `images.animated_assets` | ID анимированных игровых ассетов, если GIF не опубликован или нужен клиентский маппинг |
+| `images.full_art` | Full art скина |
+| `gallery` | Gallery со страницы скина |
+| `sounds` | Звуки и реплики скина |
+| `wiki_page` | Каноническая wiki-страница |
+| `status`, `error` | Статус wiki-синхронизации |
+| `fetched_at`, `changed_at`, `updated_at` | Времена синхронизации и обновления |
+
 ## Справочники и счетчики
 
 `GET /api/v1/meta` возвращает:
@@ -785,8 +930,13 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
 | `totals.minions` | Число существ |
 | `totals.spells` | Число заклинаний |
 | `totals.heroes` | Число синхронизированных героев |
+| `totals.hero_skins` | Число синхронизированных скинов героев |
 | `totals.timewarped` | Число Timewarped-карт |
 | `totals.libraries` | Общее число записей в библиотеках |
+| `totals.constructed` | Общее число карт Standard/Wild |
+| `totals.constructed_standard` | Число карт стандартного формата |
+| `totals.constructed_wild` | Число карт вольного формата |
+| `totals.constructed_wiki_ok` | Число Standard/Wild карт с готовым wiki-блоком |
 | `totals.in_pool` | Карт в текущем пуле |
 | `totals.duos_only` | Карт только для дуо |
 | `totals.with_framed_image` | Карт с framed image |
@@ -806,13 +956,14 @@ curl 'https://db.kolodahs.ru/api/v1/heroes/by-dbf/57944'
 2. Идите по `/api/v1/cards?per_page=200&page=1`, затем `page=2` и дальше до `has_next=false`.
 3. Сохраняйте карты по ключу `card_id`; `dbf` удобен для поиска, но `card_id` лучше как стабильный primary key.
 4. Если нужны звуки, artist, external links и related cards, используйте `include=wiki`.
-5. Для Timewarped Tavern синхронизируйте отдельный ресурс `/api/v1/timewarped-cards`.
-6. Для аномалий, квестов, призов, наград и аксессуаров синхронизируйте `/api/v1/libraries/{library}` или короткие endpoints.
+5. Для героев синхронизируйте `/api/v1/heroes`, а для всех Hearthstone hero skins отдельно `/api/v1/hero-skins`.
+6. Для Timewarped Tavern синхронизируйте отдельный ресурс `/api/v1/timewarped-cards`.
+7. Для аномалий, квестов, призов, наград и аксессуаров синхронизируйте `/api/v1/libraries/{library}` или короткие endpoints.
 
 Для последующих обновлений:
 
 1. Храните максимальный `updated_at`, который вы обработали.
-2. Запрашивайте `/api/v1/cards?updated_since=<last_seen>&per_page=200`.
+2. Запрашивайте нужные ресурсы с `updated_since=<last_seen>&per_page=200`: `/cards`, `/heroes`, `/hero-skins`, `/timewarped-cards`, `/constructed-cards` и библиотеки.
 3. Дедуплицируйте по `card_id`, потому что `updated_since` использует `>=`.
 4. Используйте `ETag` или `If-Modified-Since`, чтобы не скачивать неизменившиеся ответы.
 

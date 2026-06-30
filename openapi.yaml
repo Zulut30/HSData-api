@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.7.0
+  version: 1.8.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -29,8 +29,11 @@ paths:
                   - status
                   - cards_total
                   - heroes_total
+                  - hero_skins_total
                   - timewarped_total
                   - library_total
+                  - constructed_total
+                  - constructed_wiki_total
                   - endpoints
                 properties:
                   name:
@@ -43,9 +46,15 @@ paths:
                     type: integer
                   heroes_total:
                     type: integer
+                  hero_skins_total:
+                    type: integer
                   timewarped_total:
                     type: integer
                   library_total:
+                    type: integer
+                  constructed_total:
+                    type: integer
+                  constructed_wiki_total:
                     type: integer
                   endpoints:
                     type: object
@@ -56,12 +65,15 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.7.0
+                    version: 1.8.0
                     status: ok
                     cards_total: 2352
                     heroes_total: 119
+                    hero_skins_total: 701
                     timewarped_total: 161
                     library_total: 524
+                    constructed_total: 6331
+                    constructed_wiki_total: 6331
                     endpoints:
                       GET /api/v1: Описание API.
                       GET /api/v1/meta: Типы существ, уровни таверны и счетчики.
@@ -73,6 +85,9 @@ paths:
                       GET /api/v1/heroes: Список героев Полей сражений.
                       GET /api/v1/heroes/{card_id}: Один герой по card_id.
                       GET /api/v1/heroes/by-dbf/{dbf}: Один герой по dbf.
+                      GET /api/v1/hero-skins: Список скинов героев Hearthstone со static/animated/full art, Gallery и Sounds.
+                      GET /api/v1/hero-skins/{card_id}: Один скин героя по card_id.
+                      GET /api/v1/hero-skins/by-dbf/{dbf}: Один скин героя по dbf.
                       GET /api/v1/timewarped-cards: Список хрономальных карт Timewarped Tavern.
                       GET /api/v1/timewarped-cards/{card_id}: Одна хрономальная карта по card_id.
                       GET /api/v1/timewarped-cards/by-dbf/{dbf}: Одна хрономальная карта по dbf.
@@ -142,9 +157,14 @@ paths:
                       cards: 2352
                       minions: 2245
                       spells: 107
-                      heroes: 13
+                      heroes: 119
+                      hero_skins: 701
                       timewarped: 161
                       libraries: 524
+                      constructed: 6331
+                      constructed_standard: 1152
+                      constructed_wild: 6331
+                      constructed_wiki_ok: 6331
                       in_pool: 350
                       duos_only: 78
                       with_framed_image: 2352
@@ -801,6 +821,138 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HeroResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /hero-skins:
+    get:
+      summary: List Hearthstone hero skins
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search by skin name, card_id, dbf, character, actor, artist, class, or category.
+        - name: dbf
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: class
+          in: query
+          schema:
+            type: string
+          description: Hero class slug, for example deathknight, mage, warrior, or neutral.
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Wiki category slug, for example 1800_gold_skins, bundle_skins, legendary_skins, mythic_skins, or unavailable.
+        - name: has_animated
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+          description: 1 returns skins with an animated GIF or animated asset IDs.
+        - name: has_gallery
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+          description: 1 returns skins with at least one gallery item.
+        - name: has_sounds
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+          description: 1 returns skins with at least one sound entry.
+        - name: updated_since
+          in: query
+          description: Return skins with updated_at greater than or equal to this ISO 8601 timestamp.
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Paginated hero skins.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeroSkinListResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /hero-skins/{card_id}:
+    get:
+      summary: Get one Hearthstone hero skin by card_id
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: HERO_11b
+      responses:
+        "200":
+          description: Hero skin.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeroSkinResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /hero-skins/by-dbf/{dbf}:
+    get:
+      summary: Get one Hearthstone hero skin by dbf
+      parameters:
+        - name: dbf
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          example: 93448
+      responses:
+        "200":
+          description: Hero skin.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+            Last-Modified:
+              $ref: "#/components/headers/LastModified"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeroSkinResponse"
         "400":
           $ref: "#/components/responses/Error"
         "404":
@@ -1843,6 +1995,272 @@ components:
       required:
         - data
         - pagination
+    HeroSkinName:
+      type: object
+      properties:
+        en:
+          type:
+            - string
+            - "null"
+      required:
+        - en
+    HeroSkinClass:
+      type: object
+      properties:
+        id:
+          type:
+            - integer
+            - "null"
+        slug:
+          type:
+            - string
+            - "null"
+        name_en:
+          type:
+            - string
+            - "null"
+        name_ru:
+          type:
+            - string
+            - "null"
+      required:
+        - id
+        - slug
+        - name_en
+        - name_ru
+    HeroSkinCategory:
+      type: object
+      properties:
+        slug:
+          type:
+            - string
+            - "null"
+        name_en:
+          type:
+            - string
+            - "null"
+        name_ru:
+          type:
+            - string
+            - "null"
+      required:
+        - slug
+        - name_en
+        - name_ru
+    HeroSkinAnimatedAsset:
+      type: object
+      properties:
+        asset:
+          type: string
+          description: Game asset ID for an animated portrait variant.
+        kind:
+          type:
+            - string
+            - "null"
+          description: Variant kind, for example main, main_premium, legendary, or mythic.
+      required:
+        - asset
+        - kind
+    HeroSkinImages:
+      type: object
+      properties:
+        static:
+          type:
+            - string
+            - "null"
+          format: uri
+        animated:
+          type:
+            - string
+            - "null"
+          format: uri
+          description: Direct animated GIF when Hearthstone Wiki exposes one.
+        animated_assets:
+          type: array
+          description: Animated asset IDs when a direct GIF is not available or a client needs game asset mapping.
+          items:
+            $ref: "#/components/schemas/HeroSkinAnimatedAsset"
+        full_art:
+          type:
+            - string
+            - "null"
+          format: uri
+      required:
+        - static
+        - animated
+        - animated_assets
+        - full_art
+    HeroSkinGalleryItem:
+      type: object
+      properties:
+        caption:
+          type:
+            - string
+            - "null"
+        file_title:
+          type:
+            - string
+            - "null"
+        file_url:
+          type:
+            - string
+            - "null"
+          format: uri
+      required:
+        - caption
+        - file_title
+        - file_url
+    HeroSkinSound:
+      type: object
+      properties:
+        file_title:
+          type:
+            - string
+            - "null"
+        file_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        transcript:
+          type:
+            - string
+            - "null"
+        type:
+          type:
+            - string
+            - "null"
+      required:
+        - file_title
+        - file_url
+        - transcript
+        - type
+    HeroSkin:
+      type: object
+      properties:
+        card_id:
+          type: string
+        dbf:
+          type:
+            - integer
+            - "null"
+        name:
+          $ref: "#/components/schemas/HeroSkinName"
+        class:
+          $ref: "#/components/schemas/HeroSkinClass"
+        health:
+          type:
+            - integer
+            - "null"
+        character:
+          type:
+            - string
+            - "null"
+        actor:
+          type:
+            - string
+            - "null"
+        artist:
+          type:
+            - string
+            - "null"
+        category:
+          oneOf:
+            - $ref: "#/components/schemas/HeroSkinCategory"
+            - type: "null"
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeroSkinCategory"
+        tags:
+          type: array
+          items:
+            type: string
+        images:
+          $ref: "#/components/schemas/HeroSkinImages"
+        gallery:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeroSkinGalleryItem"
+        sounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeroSkinSound"
+        wiki_page:
+          type: object
+          properties:
+            title:
+              type:
+                - string
+                - "null"
+            url:
+              type:
+                - string
+                - "null"
+              format: uri
+          required:
+            - title
+            - url
+        status:
+          type: string
+          enum: [ok, missing, error]
+        error:
+          type:
+            - string
+            - "null"
+        fetched_at:
+          type:
+            - string
+            - "null"
+        changed_at:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - card_id
+        - dbf
+        - name
+        - class
+        - health
+        - character
+        - actor
+        - artist
+        - category
+        - categories
+        - tags
+        - images
+        - gallery
+        - sounds
+        - wiki_page
+        - status
+        - error
+        - fetched_at
+        - changed_at
+        - created_at
+        - updated_at
+    HeroSkinResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/HeroSkin"
+      required:
+        - data
+    HeroSkinListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeroSkin"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - data
+        - pagination
     Pagination:
       type: object
       properties:
@@ -1876,9 +2294,19 @@ components:
           type: integer
         heroes:
           type: integer
+        hero_skins:
+          type: integer
         timewarped:
           type: integer
         libraries:
+          type: integer
+        constructed:
+          type: integer
+        constructed_standard:
+          type: integer
+        constructed_wild:
+          type: integer
+        constructed_wiki_ok:
           type: integer
         in_pool:
           type: integer
@@ -1891,8 +2319,13 @@ components:
         - minions
         - spells
         - heroes
+        - hero_skins
         - timewarped
         - libraries
+        - constructed
+        - constructed_standard
+        - constructed_wild
+        - constructed_wiki_ok
         - in_pool
         - duos_only
         - with_framed_image
