@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.8.1`
+- Текущая версия API: `1.9.0`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -32,6 +32,8 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - hero skins внутри wiki-блока героя: gallery, full art, availability и card changes;
 - отдельная библиотека скинов героев Hearthstone;
 - для скинов героев: static portrait, animated GIF, animated asset IDs, full art, class, character, actor, gallery, sounds, категории и wiki-ссылка;
+- отдельная библиотека питомцев Hearthstone;
+- для питомцев: базовый pet, вариант, уровень, card image, end screen background, gallery и wiki-ссылка;
 - отдельная категория хрономальных карт Timewarped Tavern;
 - для Timewarped-карт: русская основная карта, золотая версия, `Availability`, `Related cards`, `Sounds`, `Gallery`, `Card changes` и `External links`.
 - библиотеки аномалий, квестов, призов Ярмарки Новолуния, наград и аксессуаров;
@@ -41,7 +43,7 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - для Standard/Wild: русская основная карта из Blizzard API, EN/RU текст, flavor, сет, класс, тип, редкость, характеристики и изображения;
 - для Standard/Wild wiki-метаданных: `Gallery`, `Patch changes`, `External links`, `Golden cards`, `Signature cards`, `Related cards`, `Wiki mechanics`, `Wiki tags`, `Ban lists` и `Sounds`.
 
-На версии `1.8.1` публичный API отдает карты, tavern spells, героев, отдельную библиотеку скинов героев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
+На версии `1.9.0` публичный API отдает карты, tavern spells, героев, отдельные библиотеки скинов героев и питомцев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
 
 ## Быстрый старт
 
@@ -101,6 +103,16 @@ curl 'https://db.kolodahs.ru/api/v1/hero-skins?class=deathknight&has_animated=1'
 curl 'https://db.kolodahs.ru/api/v1/hero-skins?category=1800_gold_skins'
 curl 'https://db.kolodahs.ru/api/v1/hero-skins/HERO_11b'
 curl 'https://db.kolodahs.ru/api/v1/hero-skins/by-dbf/93448'
+```
+
+Получить питомцев Hearthstone:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/pets?per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/pets?pet_id=3'
+curl 'https://db.kolodahs.ru/api/v1/pets?level=4&has_background=1'
+curl 'https://db.kolodahs.ru/api/v1/pets/PET_3_1'
+curl 'https://db.kolodahs.ru/api/v1/pets/by-dbf/122617'
 ```
 
 Получить хрономальные карты Timewarped Tavern:
@@ -164,6 +176,9 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `GET` | `/api/v1/hero-skins` | Список скинов героев Hearthstone |
 | `GET` | `/api/v1/hero-skins/{card_id}` | Один скин героя по `card_id` |
 | `GET` | `/api/v1/hero-skins/by-dbf/{dbf}` | Один скин героя по `dbf` |
+| `GET` | `/api/v1/pets` | Список питомцев Hearthstone |
+| `GET` | `/api/v1/pets/{card_id}` | Один вариант питомца по `card_id` |
+| `GET` | `/api/v1/pets/by-dbf/{dbf}` | Один вариант питомца по `dbf` |
 | `GET` | `/api/v1/timewarped-cards` | Список хрономальных карт Timewarped Tavern |
 | `GET` | `/api/v1/timewarped-cards/{card_id}` | Одна хрономальная карта по `card_id` |
 | `GET` | `/api/v1/timewarped-cards/by-dbf/{dbf}` | Одна хрономальная карта по `dbf` |
@@ -927,6 +942,77 @@ curl 'https://db.kolodahs.ru/api/v1/hero-skins/by-dbf/93448'
 | `status`, `error` | Статус wiki-синхронизации |
 | `fetched_at`, `changed_at`, `updated_at` | Времена синхронизации и обновления |
 
+## Питомцы
+
+Питомцы Hearthstone вынесены в отдельную библиотеку. Одна запись API соответствует одному варианту питомца: например `Classic Krush`, `Devilsaur Krush`, `King Plush`. Базовый питомец находится в поле `pet`, а конкретный вариант и уровень разблокировки — в поле `variant`.
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/pets?per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/pets?q=Krush'
+curl 'https://db.kolodahs.ru/api/v1/pets?pet_id=3'
+curl 'https://db.kolodahs.ru/api/v1/pets?level=4&has_background=1'
+curl 'https://db.kolodahs.ru/api/v1/pets/PET_3_1'
+curl 'https://db.kolodahs.ru/api/v1/pets/by-dbf/122617'
+```
+
+### Фильтры списка питомцев
+
+`GET /api/v1/pets`
+
+| Параметр | Тип | Описание |
+|---|---:|---|
+| `q` | string | Поиск по pet name, variant name, `card_id`, `dbf`, wiki page |
+| `dbf` | integer | Точный поиск по `dbf` |
+| `pet_id` | integer | Базовый pet ID из wiki Cargo |
+| `level` | integer | Уровень варианта `1..4` |
+| `has_gallery` | `0`/`1` | Только варианты с gallery или без нее |
+| `has_background` | `0`/`1` | Только варианты с end screen background или без него |
+| `updated_since` | ISO 8601 datetime | Только питомцы, измененные начиная с указанного времени |
+| `page` | integer | Страница, по умолчанию `1` |
+| `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
+
+### Формат питомца
+
+```json
+{
+  "pet": {
+    "id": 3,
+    "name": "King Krush"
+  },
+  "variant": {
+    "id": 5,
+    "name": "Classic Krush",
+    "level": 1
+  },
+  "card_id": "PET_3_1",
+  "dbf": 122617,
+  "images": {
+    "card": "https://hearthstone.wiki.gg/wiki/Special:Redirect/file/PET_3_1.png",
+    "end_screen_background": "https://hearthstone.wiki.gg/wiki/Special:Redirect/file/PETFX_Krush_VictoryFlourish_EndBackground_Base.png"
+  },
+  "gallery": [
+    {
+      "caption": "Classic Krush, full art",
+      "file_title": "Classic Krush, full art",
+      "file_url": "https://hearthstone.wiki.gg/images/thumb/Classic_Krush_full.jpg/706px-Classic_Krush_full.jpg"
+    }
+  ],
+  "wiki_page": {
+    "title": "Classic Krush",
+    "url": "https://hearthstone.wiki.gg/wiki/Classic_Krush"
+  },
+  "status": "ok",
+  "error": null,
+  "source": "hearthstone.wiki.gg",
+  "fetched_at": "2026-07-01 14:34:28",
+  "changed_at": "2026-07-01 14:34:28",
+  "created_at": "2026-07-01 14:31:53",
+  "updated_at": "2026-07-01 14:34:28"
+}
+```
+
+У некоторых новых вариантов wiki Cargo уже содержит pet/variant/card данные, но отдельной страницы варианта еще нет. Такие записи возвращаются со статусом `partial`: `card_id` и card image есть, а `gallery` и `end_screen_background` могут быть пустыми до появления страницы на wiki.
+
 ## Справочники и счетчики
 
 `GET /api/v1/meta` возвращает:
@@ -938,6 +1024,7 @@ curl 'https://db.kolodahs.ru/api/v1/hero-skins/by-dbf/93448'
 | `totals.spells` | Число заклинаний |
 | `totals.heroes` | Число синхронизированных героев |
 | `totals.hero_skins` | Число синхронизированных скинов героев |
+| `totals.pets` | Число синхронизированных вариантов питомцев |
 | `totals.timewarped` | Число Timewarped-карт |
 | `totals.libraries` | Общее число записей в библиотеках |
 | `totals.constructed` | Общее число карт Standard/Wild |
@@ -963,14 +1050,14 @@ curl 'https://db.kolodahs.ru/api/v1/hero-skins/by-dbf/93448'
 2. Идите по `/api/v1/cards?per_page=200&page=1`, затем `page=2` и дальше до `has_next=false`.
 3. Сохраняйте карты по ключу `card_id`; `dbf` удобен для поиска, но `card_id` лучше как стабильный primary key.
 4. Если нужны звуки, artist, external links и related cards, используйте `include=wiki`.
-5. Для героев синхронизируйте `/api/v1/heroes`, а для всех Hearthstone hero skins отдельно `/api/v1/hero-skins`.
+5. Для героев синхронизируйте `/api/v1/heroes`, для Hearthstone hero skins — `/api/v1/hero-skins`, для питомцев — `/api/v1/pets`.
 6. Для Timewarped Tavern синхронизируйте отдельный ресурс `/api/v1/timewarped-cards`.
 7. Для аномалий, квестов, призов, наград и аксессуаров синхронизируйте `/api/v1/libraries/{library}` или короткие endpoints.
 
 Для последующих обновлений:
 
 1. Храните максимальный `updated_at`, который вы обработали.
-2. Запрашивайте нужные ресурсы с `updated_since=<last_seen>&per_page=200`: `/cards`, `/heroes`, `/hero-skins`, `/timewarped-cards`, `/constructed-cards` и библиотеки.
+2. Запрашивайте нужные ресурсы с `updated_since=<last_seen>&per_page=200`: `/cards`, `/heroes`, `/hero-skins`, `/pets`, `/timewarped-cards`, `/constructed-cards` и библиотеки.
 3. Дедуплицируйте по `card_id`, потому что `updated_since` использует `>=`.
 4. Используйте `ETag` или `If-Modified-Since`, чтобы не скачивать неизменившиеся ответы.
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.8.1
+  version: 1.9.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -30,6 +30,7 @@ paths:
                   - cards_total
                   - heroes_total
                   - hero_skins_total
+                  - pets_total
                   - timewarped_total
                   - library_total
                   - constructed_total
@@ -48,6 +49,8 @@ paths:
                     type: integer
                   hero_skins_total:
                     type: integer
+                  pets_total:
+                    type: integer
                   timewarped_total:
                     type: integer
                   library_total:
@@ -65,11 +68,12 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.8.1
+                    version: 1.9.0
                     status: ok
                     cards_total: 2352
                     heroes_total: 119
                     hero_skins_total: 701
+                    pets_total: 32
                     timewarped_total: 161
                     library_total: 524
                     constructed_total: 6331
@@ -88,6 +92,9 @@ paths:
                       GET /api/v1/hero-skins: Список скинов героев Hearthstone со static/animated/full art, Gallery и Sounds.
                       GET /api/v1/hero-skins/{card_id}: Один скин героя по card_id.
                       GET /api/v1/hero-skins/by-dbf/{dbf}: Один скин героя по dbf.
+                      GET /api/v1/pets: Список питомцев Hearthstone с вариантами, Gallery и end screen background.
+                      GET /api/v1/pets/{card_id}: Один вариант питомца по card_id.
+                      GET /api/v1/pets/by-dbf/{dbf}: Один вариант питомца по dbf.
                       GET /api/v1/timewarped-cards: Список хрономальных карт Timewarped Tavern.
                       GET /api/v1/timewarped-cards/{card_id}: Одна хрономальная карта по card_id.
                       GET /api/v1/timewarped-cards/by-dbf/{dbf}: Одна хрономальная карта по dbf.
@@ -159,6 +166,7 @@ paths:
                       spells: 107
                       heroes: 119
                       hero_skins: 701
+                      pets: 32
                       timewarped: 161
                       libraries: 524
                       constructed: 6331
@@ -449,6 +457,112 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WikiResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /pets:
+    get:
+      summary: List Hearthstone pets
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search by pet name, variant name, card_id, dbf, or wiki page.
+        - name: dbf
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: pet_id
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          description: Base pet ID from Hearthstone Wiki Cargo.
+        - name: level
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+          description: Pet variant unlock level.
+        - name: has_gallery
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+        - name: has_background
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+          description: 1 returns variants with an end screen background.
+        - name: updated_since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Paginated pet variants.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetListResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+  /pets/{card_id}:
+    get:
+      summary: Get one Hearthstone pet variant by card_id
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: PET_3_1
+      responses:
+        "200":
+          description: Pet variant.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetResponse"
+        "404":
+          $ref: "#/components/responses/Error"
+  /pets/by-dbf/{dbf}:
+    get:
+      summary: Get one Hearthstone pet variant by dbf
+      parameters:
+        - name: dbf
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+          example: 122617
+      responses:
+        "200":
+          description: Pet variant.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PetResponse"
         "400":
           $ref: "#/components/responses/Error"
         "404":
@@ -2294,6 +2408,141 @@ components:
       required:
         - data
         - pagination
+    PetGalleryItem:
+      type: object
+      properties:
+        caption:
+          type:
+            - string
+            - "null"
+        file_title:
+          type:
+            - string
+            - "null"
+        file_url:
+          type:
+            - string
+            - "null"
+          format: uri
+      required:
+        - caption
+        - file_title
+        - file_url
+    Pet:
+      type: object
+      properties:
+        pet:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+          required:
+            - id
+            - name
+        variant:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            level:
+              type:
+                - integer
+                - "null"
+              minimum: 1
+              maximum: 4
+          required:
+            - id
+            - name
+            - level
+        card_id:
+          type:
+            - string
+            - "null"
+        dbf:
+          type:
+            - integer
+            - "null"
+        images:
+          type: object
+          properties:
+            card:
+              type:
+                - string
+                - "null"
+              format: uri
+            end_screen_background:
+              type:
+                - string
+                - "null"
+              format: uri
+          required:
+            - card
+            - end_screen_background
+        gallery:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetGalleryItem"
+        wiki_page:
+          oneOf:
+            - $ref: "#/components/schemas/WikiPage"
+            - type: "null"
+        status:
+          type: string
+          enum: [ok, partial, error]
+        error:
+          type:
+            - string
+            - "null"
+        source:
+          type: string
+        fetched_at:
+          type:
+            - string
+            - "null"
+        changed_at:
+          type:
+            - string
+            - "null"
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - pet
+        - variant
+        - card_id
+        - dbf
+        - images
+        - gallery
+        - wiki_page
+        - status
+        - error
+        - source
+        - created_at
+        - updated_at
+    PetResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Pet"
+      required:
+        - data
+    PetListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pet"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - data
+        - pagination
     Pagination:
       type: object
       properties:
@@ -2329,6 +2578,8 @@ components:
           type: integer
         hero_skins:
           type: integer
+        pets:
+          type: integer
         timewarped:
           type: integer
         libraries:
@@ -2353,6 +2604,7 @@ components:
         - spells
         - heroes
         - hero_skins
+        - pets
         - timewarped
         - libraries
         - constructed

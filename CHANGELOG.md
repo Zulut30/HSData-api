@@ -2,6 +2,15 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.9.0 - 2026-07-01
+
+- Добавлена отдельная библиотека питомцев Hearthstone: `GET /api/v1/pets`, `GET /api/v1/pets/{card_id}`, `GET /api/v1/pets/by-dbf/{dbf}`.
+- Синхронизированы 8 базовых питомцев и 32 варианта из Hearthstone Wiki Cargo.
+- Для вариантов питомцев доступны `pet`, `variant`, `level`, `card_id`, `dbf`, card image, `end_screen_background`, `gallery`, wiki page и sync status.
+- Добавлены фильтры `q`, `dbf`, `pet_id`, `level`, `has_gallery`, `has_background`, `updated_since`, `page`, `per_page`.
+- В `GET /api/v1` добавлен счетчик `pets_total`, в `GET /api/v1/meta` добавлен `totals.pets`.
+- README и OpenAPI обновлены под питомцев.
+
 ## 1.8.1 - 2026-07-01
 
 - Для `GET /api/v1/darkmoon-prizes` добавлен фильтр `tier=1..4`.
