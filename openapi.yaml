@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.9.0
+  version: 1.10.0
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -35,6 +35,7 @@ paths:
                   - library_total
                   - constructed_total
                   - constructed_wiki_total
+                  - diamond_cards_total
                   - endpoints
                 properties:
                   name:
@@ -59,6 +60,8 @@ paths:
                     type: integer
                   constructed_wiki_total:
                     type: integer
+                  diamond_cards_total:
+                    type: integer
                   endpoints:
                     type: object
                     additionalProperties:
@@ -68,7 +71,7 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.9.0
+                    version: 1.10.0
                     status: ok
                     cards_total: 2352
                     heroes_total: 119
@@ -78,6 +81,7 @@ paths:
                     library_total: 524
                     constructed_total: 6331
                     constructed_wiki_total: 6331
+                    diamond_cards_total: 137
                     endpoints:
                       GET /api/v1: Описание API.
                       GET /api/v1/meta: Типы существ, уровни таверны и счетчики.
@@ -98,6 +102,8 @@ paths:
                       GET /api/v1/timewarped-cards: Список хрономальных карт Timewarped Tavern.
                       GET /api/v1/timewarped-cards/{card_id}: Одна хрономальная карта по card_id.
                       GET /api/v1/timewarped-cards/by-dbf/{dbf}: Одна хрономальная карта по dbf.
+                      GET /api/v1/diamond-cards: Библиотека алмазных карт.
+                      GET /api/v1/diamond-cards/{card_id}: Одна алмазная карта по обычному или diamond card_id.
                       GET /api/v1/anomalies: Библиотека аномалий.
                       GET /api/v1/quests: Библиотека квестов.
                       GET /api/v1/darkmoon-prizes: Библиотека призов Ярмарки Новолуния.
@@ -170,6 +176,7 @@ paths:
                       timewarped: 161
                       libraries: 524
                       constructed: 6331
+                      diamond_cards: 137
                       constructed_standard: 1152
                       constructed_wild: 6331
                       constructed_wiki_ok: 6331
@@ -938,6 +945,79 @@ paths:
                 $ref: "#/components/schemas/HeroResponse"
         "400":
           $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /diamond-cards:
+    get:
+      summary: List diamond cards
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [all, standard, wild]
+            default: all
+        - name: section
+          in: query
+          schema:
+            type: string
+            enum: [all, collectible, uncollectible]
+            default: all
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: has_animated
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+        - name: updated_since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Paginated diamond cards.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiamondCardListResponse"
+  /diamond-cards/{card_id}:
+    get:
+      summary: Get one diamond card by base or diamond card_id
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+          examples:
+            base:
+              value: CFM_637
+            diamond:
+              value: CFM_637_Premium2
+      responses:
+        "200":
+          description: Diamond card.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiamondCardResponse"
         "404":
           $ref: "#/components/responses/Error"
   /hero-skins:
@@ -2543,6 +2623,102 @@ components:
       required:
         - data
         - pagination
+    DiamondCard:
+      type: object
+      properties:
+        base_card:
+          type: object
+          properties:
+            card_id:
+              type: string
+            dbf:
+              type:
+                - integer
+                - "null"
+          required: [card_id, dbf]
+        diamond_card:
+          type: object
+          properties:
+            card_id:
+              type: string
+            dbf:
+              type:
+                - integer
+                - "null"
+          required: [card_id, dbf]
+        name:
+          type: object
+          properties:
+            ru:
+              type:
+                - string
+                - "null"
+            en:
+              type:
+                - string
+                - "null"
+          required: [ru, en]
+        section:
+          type: object
+          properties:
+            slug:
+              type: string
+              enum: [collectible, uncollectible]
+            name_ru:
+              type: string
+          required: [slug, name_ru]
+        formats:
+          type: object
+          properties:
+            standard:
+              type: boolean
+            wild:
+              type: boolean
+          required: [standard, wild]
+        images:
+          type: object
+          properties:
+            diamond:
+              type:
+                - string
+                - "null"
+            animated_diamond:
+              type:
+                - string
+                - "null"
+          required: [diamond, animated_diamond]
+        wiki_page:
+          $ref: "#/components/schemas/WikiPage"
+        hearthpwn_url:
+          type:
+            - string
+            - "null"
+      required:
+        - base_card
+        - diamond_card
+        - name
+        - section
+        - formats
+        - images
+    DiamondCardResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/DiamondCard"
+      required:
+        - data
+    DiamondCardListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiamondCard"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - data
+        - pagination
     Pagination:
       type: object
       properties:
@@ -2586,6 +2762,8 @@ components:
           type: integer
         constructed:
           type: integer
+        diamond_cards:
+          type: integer
         constructed_standard:
           type: integer
         constructed_wild:
@@ -2608,6 +2786,7 @@ components:
         - timewarped
         - libraries
         - constructed
+        - diamond_cards
         - constructed_standard
         - constructed_wild
         - constructed_wiki_ok

@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.9.0`
+- Текущая версия API: `1.10.0`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -41,9 +41,11 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - для аксессуаров: разделение на `lesser` / `greater` и русские группы “Малый аксессуар” / “Большой аксессуар”.
 - отдельная база карт стандартного и вольного форматов Hearthstone;
 - для Standard/Wild: русская основная карта из Blizzard API, EN/RU текст, flavor, сет, класс, тип, редкость, характеристики и изображения;
-- для Standard/Wild wiki-метаданных: `Gallery`, `Patch changes`, `External links`, `Golden cards`, `Signature cards`, `Related cards`, `Wiki mechanics`, `Wiki tags`, `Ban lists` и `Sounds`.
+- для Standard/Wild: прямые изображения обычной, golden, signature и diamond-версий, если они есть;
+- отдельная библиотека алмазных карт с обычными `card_id`/`dbf`, diamond image, разделением `collectible` / `uncollectible` и флагами Standard/Wild;
+- для Standard/Wild wiki-метаданных: `Gallery`, `Patch changes`, `External links`, `Golden cards`, `Signature cards`, `Diamond cards`, animated-поля, `Related cards`, `Wiki mechanics`, `Wiki tags`, `Ban lists` и `Sounds`.
 
-На версии `1.9.0` публичный API отдает карты, tavern spells, героев, отдельные библиотеки скинов героев и питомцев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
+На версии `1.10.0` публичный API отдает карты, tavern spells, героев, отдельные библиотеки скинов героев и питомцев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
 
 ## Быстрый старт
 
@@ -133,6 +135,14 @@ curl 'https://db.kolodahs.ru/api/v1/constructed-cards/by-dbf/69649?include=wiki'
 curl 'https://db.kolodahs.ru/api/v1/constructed-cards/CORE_CS2_188/wiki'
 ```
 
+Получить алмазные карты:
+
+```bash
+curl 'https://db.kolodahs.ru/api/v1/diamond-cards?format=wild&section=collectible&per_page=20'
+curl 'https://db.kolodahs.ru/api/v1/diamond-cards/CFM_637_Premium2'
+curl 'https://db.kolodahs.ru/api/v1/diamond-cards/CFM_637'
+```
+
 Получить библиотеки аномалий, квестов, призов, наград и аксессуаров:
 
 ```bash
@@ -191,6 +201,9 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `GET` | `/api/v1/constructed-cards/by-dbf/{dbf}` | Одна карта Standard/Wild по `dbf` |
 | `GET` | `/api/v1/constructed-cards/by-dbf/{dbf}?include=wiki` | Одна карта Standard/Wild по `dbf` с wiki-метаданными |
 | `GET` | `/api/v1/constructed-cards/by-dbf/{dbf}/wiki` | Только wiki-метаданные карты Standard/Wild по `dbf` |
+| `GET` | `/api/v1/diamond-cards` | Библиотека алмазных карт |
+| `GET` | `/api/v1/diamond-cards?format=standard&section=collectible` | Алмазные карты с фильтрами по формату и разделу |
+| `GET` | `/api/v1/diamond-cards/{card_id}` | Одна алмазная карта по обычному `card_id` или diamond `card_id` |
 | `GET` | `/api/v1/anomalies` | Библиотека аномалий |
 | `GET` | `/api/v1/quests` | Библиотека квестов |
 | `GET` | `/api/v1/darkmoon-prizes` | Библиотека призов Ярмарки Новолуния |
@@ -241,6 +254,53 @@ curl 'https://db.kolodahs.ru/api/v1/cards?updated_since=2026-06-12T00:00:00Z&per
 | `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
 
 Wiki-поля Standard/Wild заполняются отдельной фоновой синхронизацией с `hearthstone.wiki.gg`. Если `include=wiki` вернул `wiki: null`, значит сама карта уже есть в базе, а тяжелые wiki-данные еще стоят в очереди синхронизации.
+
+## Алмазные карты
+
+`GET /api/v1/diamond-cards` возвращает отдельный индекс diamond-версий из Hearthstone Wiki. Одна запись соответствует обычной карте, у которой есть diamond quality.
+
+Фильтры:
+
+| Параметр | Тип | Описание |
+|---|---:|---|
+| `format` | string | `all`, `standard`, `wild`; фильтр по присутствию обычной карты в формате |
+| `section` | string | `all`, `collectible`, `uncollectible` |
+| `q` | string | Поиск по RU/EN названию, обычному `card_id`, diamond `card_id`, `dbf` |
+| `has_animated` | `0`/`1` | Только записи с найденной animated diamond-картинкой или без нее |
+| `updated_since` | ISO 8601 datetime | Только измененные записи |
+| `page` | integer | Страница |
+| `per_page` | integer | Размер страницы, максимум `200` |
+
+Пример записи:
+
+```json
+{
+  "base_card": {
+    "card_id": "CFM_637",
+    "dbf": 40465
+  },
+  "diamond_card": {
+    "card_id": "CFM_637_Premium2",
+    "dbf": null
+  },
+  "name": {
+    "ru": "Пират Глазастик",
+    "en": "Patches the Pirate"
+  },
+  "section": {
+    "slug": "collectible",
+    "name_ru": "Коллекционные"
+  },
+  "formats": {
+    "standard": false,
+    "wild": true
+  },
+  "images": {
+    "diamond": "https://hearthstone.wiki.gg/wiki/Special:Redirect/file/CFM_637_Premium2.png",
+    "animated_diamond": null
+  }
+}
+```
 
 ## Ответ списка
 
@@ -1057,7 +1117,7 @@ curl 'https://db.kolodahs.ru/api/v1/pets/by-dbf/122617'
 Для последующих обновлений:
 
 1. Храните максимальный `updated_at`, который вы обработали.
-2. Запрашивайте нужные ресурсы с `updated_since=<last_seen>&per_page=200`: `/cards`, `/heroes`, `/hero-skins`, `/pets`, `/timewarped-cards`, `/constructed-cards` и библиотеки.
+2. Запрашивайте нужные ресурсы с `updated_since=<last_seen>&per_page=200`: `/cards`, `/heroes`, `/hero-skins`, `/pets`, `/timewarped-cards`, `/constructed-cards`, `/diamond-cards` и библиотеки.
 3. Дедуплицируйте по `card_id`, потому что `updated_since` использует `>=`.
 4. Используйте `ETag` или `If-Modified-Since`, чтобы не скачивать неизменившиеся ответы.
 

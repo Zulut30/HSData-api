@@ -2,6 +2,14 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.10.0 - 2026-07-01
+
+- Добавлена библиотека алмазных карт: `GET /api/v1/diamond-cards` и `GET /api/v1/diamond-cards/{card_id}`.
+- Синхронизировано 137 diamond-записей со страницы `Diamond card` Hearthstone Wiki.
+- Для diamond-записей доступны обычные `card_id`/`dbf`, diamond `card_id`, RU/EN название, раздел `collectible` / `uncollectible`, флаги Standard/Wild и diamond image.
+- В `constructed-cards` добавлены прямые поля `images.signature`, `images.diamond`, `images.animated.golden`, `images.animated.signature`, `images.animated.diamond`.
+- В `GET /api/v1` добавлен `diamond_cards_total`, в `GET /api/v1/meta` добавлен `totals.diamond_cards`.
+
 ## 1.9.0 - 2026-07-01
 
 - Добавлена отдельная библиотека питомцев Hearthstone: `GET /api/v1/pets`, `GET /api/v1/pets/{card_id}`, `GET /api/v1/pets/by-dbf/{dbf}`.
