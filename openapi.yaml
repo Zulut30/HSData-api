@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: HS Battlegrounds RU API
-  version: 1.8.0
+  version: 1.8.1
   description: Public free JSON API for Russian Hearthstone Battlegrounds cards.
 servers:
   - url: https://db.kolodahs.ru/api/v1
@@ -65,7 +65,7 @@ paths:
                   summary: API root response
                   value:
                     name: HS Battlegrounds RU API
-                    version: 1.8.0
+                    version: 1.8.1
                     status: ok
                     cards_total: 2352
                     heroes_total: 119
@@ -611,6 +611,7 @@ paths:
         - $ref: "#/components/parameters/LibraryDbfQuery"
         - $ref: "#/components/parameters/LibraryInPoolQuery"
         - $ref: "#/components/parameters/LibraryStatusQuery"
+        - $ref: "#/components/parameters/LibraryTierQuery"
         - $ref: "#/components/parameters/UpdatedSinceQuery"
         - $ref: "#/components/parameters/PageQuery"
         - $ref: "#/components/parameters/PerPageQuery"
@@ -1011,6 +1012,14 @@ components:
         type: string
         enum: [lesser, greater]
       description: Trinkets only. lesser = малые аксессуары, greater = большие аксессуары.
+    LibraryTierQuery:
+      name: tier
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 4
+      description: Darkmoon Prizes only. Matches Hearthstone Wiki sections Prize Turn 1..4.
     UpdatedSinceQuery:
       name: updated_since
       in: query
@@ -1672,6 +1681,29 @@ components:
           required:
             - slug
             - name_ru
+        tier:
+          type: object
+          description: Darkmoon Prize tier. Active prizes use 1..4 from Wiki sections Prize Turn 1..4; removed prizes and other libraries return null fields.
+          properties:
+            value:
+              type:
+                - integer
+                - "null"
+              minimum: 1
+              maximum: 4
+            slug:
+              type:
+                - string
+                - "null"
+              enum: [tier_1, tier_2, tier_3, tier_4, null]
+            name_ru:
+              type:
+                - string
+                - "null"
+          required:
+            - value
+            - slug
+            - name_ru
         wiki_page:
           oneOf:
             - $ref: "#/components/schemas/WikiPage"
@@ -1700,6 +1732,7 @@ components:
         - in_pool
         - pool_status
         - group
+        - tier
         - wiki_page
         - source
         - created_at

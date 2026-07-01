@@ -6,7 +6,7 @@
 - API base URL: <https://db.kolodahs.ru/api/v1>
 - Авторизация: не нужна
 - CORS: `Access-Control-Allow-Origin: *`
-- Текущая версия API: `1.8.0`
+- Текущая версия API: `1.8.1`
 - Формат ответов: `application/json; charset=utf-8`
 
 API подходит для сайтов, ботов, таблиц, модов, внутренних инструментов и клиентских синхронизаторов, которым нужны русские названия, текст, характеристики, картинки и wiki-метаданные карт Полей сражений.
@@ -41,7 +41,7 @@ API подходит для сайтов, ботов, таблиц, модов, 
 - для Standard/Wild: русская основная карта из Blizzard API, EN/RU текст, flavor, сет, класс, тип, редкость, характеристики и изображения;
 - для Standard/Wild wiki-метаданных: `Gallery`, `Patch changes`, `External links`, `Golden cards`, `Signature cards`, `Related cards`, `Wiki mechanics`, `Wiki tags`, `Ban lists` и `Sounds`.
 
-На версии `1.8.0` публичный API отдает карты, tavern spells, героев, отдельную библиотеку скинов героев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
+На версии `1.8.1` публичный API отдает карты, tavern spells, героев, отдельную библиотеку скинов героев, Timewarped Tavern, отдельные библиотеки аномалий/квестов/призов/наград/аксессуаров и карты Standard/Wild. Wiki-ссылка `wiki_page` есть в карточных ответах, а полный wiki-блок подключается через `include=wiki`, когда данные уже синхронизированы.
 
 ## Быстрый старт
 
@@ -578,6 +578,7 @@ curl 'https://db.kolodahs.ru/api/v1/timewarped-cards/by-dbf/126343'
 curl 'https://db.kolodahs.ru/api/v1/anomalies?in_pool=1'
 curl 'https://db.kolodahs.ru/api/v1/quests?in_pool=0'
 curl 'https://db.kolodahs.ru/api/v1/darkmoon-prizes'
+curl 'https://db.kolodahs.ru/api/v1/darkmoon-prizes?tier=1'
 curl 'https://db.kolodahs.ru/api/v1/rewards'
 curl 'https://db.kolodahs.ru/api/v1/trinkets?group=greater&status=removed'
 ```
@@ -588,7 +589,7 @@ curl 'https://db.kolodahs.ru/api/v1/trinkets?group=greater&status=removed'
 |---|---|---|
 | `/api/v1/anomalies` | `anomaly` | Аномалии. `in_pool=1` берется из секции `Anomalies`, `in_pool=0` из `Unused Anomalies` на wiki.gg |
 | `/api/v1/quests` | `quest` | Квесты. Доступные и удаленные разделяются по `Quests` / `Removed Quests` |
-| `/api/v1/darkmoon-prizes` | `darkmoon_prize` | Призы Ярмарки Новолуния. Доступные и удаленные разделяются по wiki.gg |
+| `/api/v1/darkmoon-prizes` | `darkmoon_prize` | Призы Ярмарки Новолуния. Доступные разделяются по `tier=1..4`, удаленные идут с `tier: null` |
 | `/api/v1/rewards` | `reward` | Награды из официального Blizzard списка `bgCardType=reward` |
 | `/api/v1/trinkets` | `trinket` | Аксессуары. Доступные и удаленные берутся с wiki.gg, группа определяется как `lesser` или `greater` |
 
@@ -601,6 +602,7 @@ curl 'https://db.kolodahs.ru/api/v1/trinkets?group=greater&status=removed'
 | `in_pool` | `0`/`1` | `1` — доступные, `0` — удаленные/не в пуле |
 | `status` | string | `available` или `removed` |
 | `group` | string | Только для аксессуаров: `lesser` или `greater` |
+| `tier` | integer | Только для призов Ярмарки Новолуния: `1..4`, соответствует секциям `Prize Turn 1..4` на wiki |
 | `updated_since` | ISO 8601 datetime | Только записи, измененные начиная с указанного времени |
 | `page` | integer | Страница, по умолчанию `1` |
 | `per_page` | integer | Размер страницы, по умолчанию `50`, максимум `200` |
@@ -631,6 +633,11 @@ curl 'https://db.kolodahs.ru/api/v1/trinkets?group=greater&status=removed'
   "in_pool": true,
   "pool_status": "available",
   "group": {
+    "slug": null,
+    "name_ru": null
+  },
+  "tier": {
+    "value": null,
     "slug": null,
     "name_ru": null
   },

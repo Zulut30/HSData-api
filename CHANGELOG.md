@@ -2,6 +2,13 @@
 
 Все заметные изменения публичного API фиксируются здесь.
 
+## 1.8.1 - 2026-07-01
+
+- Для `GET /api/v1/darkmoon-prizes` добавлен фильтр `tier=1..4`.
+- В записи библиотеки добавлено поле `tier` с `value`, `slug`, `name_ru`; для активных призов Ярмарки Новолуния оно соответствует секциям `Prize Turn 1..4` на Hearthstone Wiki.
+- Удаленные Darkmoon Prizes остаются с `tier: null`, потому что на общей wiki-странице они перечислены отдельно без tier-разбивки.
+- README и OpenAPI обновлены под новое поле и фильтр.
+
 ## 1.8.0 - 2026-06-30
 
 - Добавлена отдельная библиотека скинов героев Hearthstone: `GET /api/v1/hero-skins`, `GET /api/v1/hero-skins/{card_id}`, `GET /api/v1/hero-skins/by-dbf/{dbf}`.
